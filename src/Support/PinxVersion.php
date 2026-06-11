@@ -6,7 +6,7 @@ namespace Pinoox\PinxCli\Support;
 
 final class PinxVersion
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.1.3';
 
     public static function label(): string
     {
