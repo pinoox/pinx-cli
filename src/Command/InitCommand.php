@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\ComposerRunner;
+use Pinoox\PinxCli\Support\NewProjectWizard;
 use Pinoox\PinxCli\Support\ProjectRoot;
 use Pinoox\PinxCli\Support\ProjectScaffolder;
+use Pinoox\PinxCli\Support\WizardCancelledException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,10 +25,11 @@ final class InitCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name (com_vendor_app)')
+            ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name (e.g. com_acme_shop, ir_yekdo_app)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'App display name')
             ->addOption('developer', null, InputOption::VALUE_REQUIRED, 'Developer name')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Continue even when app.php already exists');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Continue even when app.php already exists')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -40,28 +43,38 @@ final class InitCommand extends Command
             return Command::FAILURE;
         }
 
-        $packageInput = (string) ($input->getOption('package') ?: '');
-        if ($packageInput === '') {
-            $packageInput = (string) $io->ask('Package name', 'com_my_app');
-        }
+        $wizard = new NewProjectWizard($io);
 
         try {
-            $package = ProjectScaffolder::normalizePackage($packageInput);
+            $info = $wizard->runForInit(
+                package: (string) ($input->getOption('package') ?: ''),
+                displayName: (string) ($input->getOption('name') ?: ''),
+                developer: (string) ($input->getOption('developer') ?: ''),
+                skipConfirm: (bool) $input->getOption('yes'),
+            );
+        } catch (WizardCancelledException) {
+            $io->warning('Cancelled.');
+
+            return Command::SUCCESS;
         } catch (\InvalidArgumentException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
         }
 
-        $displayName = (string) ($input->getOption('name') ?: ProjectScaffolder::displayNameFromPackage($package));
-        $developer = (string) ($input->getOption('developer') ?: 'Developer');
-        $replacements = ProjectScaffolder::defaultReplacements($package, $displayName, $developer);
+        $replacements = ProjectScaffolder::defaultReplacements(
+            $info['package'],
+            $info['displayName'],
+            $info['developer'],
+        );
+
+        $scaffolder = new ProjectScaffolder();
 
         if (!is_file($root . '/composer.json')) {
-            (new ProjectScaffolder())->copyFileFromSkeleton('composer.json', $root . '/composer.json', $replacements);
+            $scaffolder->copyFileFromSkeleton('composer.json', $root . '/composer.json', $replacements, $output);
         }
 
-        (new ProjectScaffolder())->initInPlace($root, $replacements);
+        $scaffolder->initInPlace($root, $replacements, $output);
 
         if (!is_dir($root . '/pincore') && !is_dir($root . '/vendor/pinoox/pincore')) {
             $io->section('Installing dependencies');

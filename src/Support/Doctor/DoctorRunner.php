@@ -191,15 +191,16 @@ final class DoctorRunner
             hint: $valid ? null : 'Set a non-empty "package" key in app.php (e.g. com_vendor_app)',
         ));
 
-        $registry = $context->root . '/config/apps.config.php';
+        $registry = \Pinoox\PinxCli\Support\ProjectPaths::appsRegistryFile($context->root);
+        $registryLabel = \Pinoox\PinxCli\Support\ProjectPaths::appsRegistryRelativeLabel($context->root);
         if (!is_file($registry)) {
             $report->add(new CheckItem(
                 group: 'App',
                 id: 'apps_registry',
                 label: 'apps.config.php',
                 status: CheckStatus::Fail,
-                detail: 'Missing config/apps.config.php',
-                hint: 'Add config/apps.config.php mapping your package to "~"',
+                detail: 'Missing ' . $registryLabel,
+                hint: 'Add platform/apps.config.php (or set PINOOX_PROJECT_REGISTRY_PATH) mapping your package to "~"',
             ));
 
             return;
@@ -218,7 +219,7 @@ final class DoctorRunner
             label: 'apps.config.php mapping',
             status: $rootMapped ? CheckStatus::Pass : CheckStatus::Fail,
             detail: $rootMapped ? $package . ' => ~' : 'Package not mapped to project root',
-            hint: $rootMapped ? null : "Set config/apps.config.php packages['{$package}'] = '~'",
+            hint: $rootMapped ? null : "Set {$registryLabel} packages['{$package}'] = '~'",
         ));
 
         $enabled = filter_var($context->config['enable'] ?? true, FILTER_VALIDATE_BOOLEAN);
@@ -252,6 +253,8 @@ final class DoctorRunner
         $required = [
             'app.php' => 'App manifest',
             'index.php' => 'HTTP entry point',
+            'platform/launcher/bootstrap.php' => 'Platform bootstrap',
+            'platform/launcher/server.php' => 'Dev server router',
             'composer.json' => 'Composer project file',
             'bin/pinx' => 'Pinx CLI entry',
         ];
@@ -268,6 +271,7 @@ final class DoctorRunner
                 hint: match ($relative) {
                     'bin/pinx' => 'Copy bin/pinx from the pinoox/app template',
                     'composer.json' => 'Run pinx init or copy composer.json from the template',
+                    'platform/launcher/bootstrap.php', 'platform/launcher/server.php' => 'Copy platform/launcher/ from the pinoox/app template',
                     default => 'Restore missing file: ' . $relative,
                 },
             ));

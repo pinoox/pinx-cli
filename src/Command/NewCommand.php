@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\ComposerRunner;
-use Pinoox\PinxCli\Support\ProjectRoot;
+use Pinoox\PinxCli\Support\NewProjectWizard;
 use Pinoox\PinxCli\Support\ProjectScaffolder;
-use Pinoox\PinxCli\Support\TemplatePath;
+use Pinoox\PinxCli\Support\WizardCancelledException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -26,53 +26,58 @@ final class NewCommand extends Command
     {
         $this
             ->addArgument('directory', InputArgument::OPTIONAL, 'Project directory name')
-            ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name (com_vendor_app)')
+            ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name (e.g. com_acme_shop, ir_yekdo_app)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'App display name')
             ->addOption('developer', null, InputOption::VALUE_REQUIRED, 'Developer name')
-            ->addOption('no-install', null, InputOption::VALUE_NONE, 'Skip composer install');
+            ->addOption('no-install', null, InputOption::VALUE_NONE, 'Skip composer install')
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation prompt')
+            ->setHelp(
+                <<<'HELP'
+Creates a new single-app Pinoox project from the pinoox/app template.
+
+Interactive wizard (recommended):
+  pinx new
+
+Quick create:
+  pinx new my-shop --package=com_acme_shop --name="Shop App" --developer="yoosef"
+
+Package examples:
+  com_acme_shop
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $directory = (string) ($input->getArgument('directory') ?: '');
-
-        if ($directory === '') {
-            $directory = (string) $io->ask('Project directory', 'my-app');
-        }
-
-        $directory = ProjectRoot::normalize($directory);
-        $target = str_contains($directory, '/') || preg_match('/^[A-Za-z]:/', $directory)
-            ? $directory
-            : ProjectRoot::normalize(getcwd() . '/' . $directory);
-
-        $packageInput = (string) ($input->getOption('package') ?: '');
-        if ($packageInput === '') {
-            $default = ProjectScaffolder::normalizePackage('com_my_' . basename($target));
-            $packageInput = (string) $io->ask('Package name', $default);
-        }
+        $wizard = new NewProjectWizard($io);
 
         try {
-            $package = ProjectScaffolder::normalizePackage($packageInput);
+            $info = $wizard->runForNew(
+                directory: (string) ($input->getArgument('directory') ?: ''),
+                package: (string) ($input->getOption('package') ?: ''),
+                displayName: (string) ($input->getOption('name') ?: ''),
+                developer: (string) ($input->getOption('developer') ?: ''),
+                skipConfirm: (bool) $input->getOption('yes'),
+            );
+        } catch (WizardCancelledException) {
+            $io->warning('Cancelled.');
+
+            return Command::SUCCESS;
         } catch (\InvalidArgumentException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
         }
 
-        $displayName = (string) ($input->getOption('name') ?: ProjectScaffolder::displayNameFromPackage($package));
-        $developer = (string) ($input->getOption('developer') ?: 'Developer');
-        $replacements = ProjectScaffolder::defaultReplacements($package, $displayName, $developer);
-
-        $io->title('Creating Pinoox app project');
-        $io->text([
-            'Directory: <info>' . $target . '</info>',
-            'Package: <info>' . $package . '</info>',
-            'Template: <info>' . TemplatePath::skeletonDir() . '</info>',
-        ]);
+        $replacements = ProjectScaffolder::defaultReplacements(
+            $info['package'],
+            $info['displayName'],
+            $info['developer'],
+        );
 
         try {
-            (new ProjectScaffolder())->copySkeleton($target, $replacements);
+            (new ProjectScaffolder())->createProject($info['target'], $replacements, $output);
         } catch (\Throwable $e) {
             $io->error($e->getMessage());
 
@@ -81,7 +86,7 @@ final class NewCommand extends Command
 
         if (!$input->getOption('no-install')) {
             $io->section('Installing dependencies');
-            $code = ComposerRunner::run(['install', '--no-interaction'], $target, $output);
+            $code = ComposerRunner::run(['install', '--no-interaction'], $info['target'], $output);
 
             if ($code !== 0) {
                 $io->warning('composer install failed. Run it manually inside the project.');
@@ -92,7 +97,7 @@ final class NewCommand extends Command
 
         $io->success('Project created.');
         $io->listing([
-            'cd ' . basename($target),
+            'cd ' . basename($info['target']),
             'cp .env.example .env',
             'pinx setup',
             'pinx dev',

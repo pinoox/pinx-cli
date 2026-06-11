@@ -8,7 +8,8 @@ Pinx detects the active app from `app.php` at the project root (must contain a `
 
 ```bash
 composer global require pinoox/pinx-cli
-pinx new my-shop --package=com_acme_shop
+pinx new
+pinx new my-shop --package=com_acme_shop --yes
 ```
 
 Ensure `~/.composer/vendor/bin` (or `%APPDATA%\Composer\vendor\bin` on Windows) is on your `PATH`.

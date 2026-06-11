@@ -82,7 +82,7 @@ final class DevApp
 
     private static function fromAppsConfig(string $projectRoot): ?string
     {
-        $registryFile = $projectRoot . '/config/apps.config.php';
+        $registryFile = ProjectPaths::appsRegistryFile($projectRoot);
 
         if (!is_file($registryFile)) {
             return null;

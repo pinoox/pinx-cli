@@ -4,14 +4,64 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Support;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 final class ProjectScaffolder
 {
     /**
      * @param array<string, string> $replacements
      */
+    public function createProject(string $targetDir, array $replacements, OutputInterface $output): void
+    {
+        if (TemplatePath::hasLocal()) {
+            $this->copySkeleton($targetDir, $replacements);
+
+            return;
+        }
+
+        $this->createFromComposerPackage($targetDir, $replacements, $output);
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    public function createFromComposerPackage(string $targetDir, array $replacements, OutputInterface $output): void
+    {
+        $targetDir = ProjectRoot::normalize($targetDir);
+
+        if (is_dir($targetDir) && $this->directoryHasFiles($targetDir)) {
+            throw new \RuntimeException('Target directory is not empty: ' . $targetDir);
+        }
+
+        $parent = dirname($targetDir);
+        $name = basename($targetDir);
+
+        if (!is_dir($parent)) {
+            mkdir($parent, 0777, true);
+        }
+
+        $code = ComposerRunner::run(
+            ['create-project', TemplatePath::TEMPLATE_PACKAGE, $name, '--no-install', '--no-interaction'],
+            $parent,
+            $output,
+        );
+
+        if ($code !== 0 || !is_file($targetDir . '/app.php')) {
+            throw new \RuntimeException(
+                'composer create-project ' . TemplatePath::TEMPLATE_PACKAGE . ' failed. '
+                . 'Ensure Packagist access and try: composer create-project ' . TemplatePath::TEMPLATE_PACKAGE . ' ' . $name,
+            );
+        }
+
+        $this->applyReplacements($targetDir, $replacements);
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
     public function copySkeleton(string $targetDir, array $replacements = []): void
     {
-        $source = TemplatePath::skeletonDir();
+        $source = TemplatePath::resolve();
         $targetDir = ProjectRoot::normalize($targetDir);
 
         if (is_dir($targetDir) && $this->directoryHasFiles($targetDir)) {
@@ -28,9 +78,9 @@ final class ProjectScaffolder
     /**
      * @param array<string, string> $replacements
      */
-    public function initInPlace(string $projectRoot, array $replacements): void
+    public function initInPlace(string $projectRoot, array $replacements, ?OutputInterface $output = null): void
     {
-        $source = TemplatePath::skeletonDir();
+        $source = TemplatePath::resolve($output);
         $projectRoot = ProjectRoot::normalize($projectRoot);
 
         $skip = ['composer.json', 'composer.lock', 'vendor', '.git', 'README.md'];
@@ -156,10 +206,56 @@ final class ProjectScaffolder
     /**
      * @param array<string, string> $replacements
      */
-    public function copyFileFromSkeleton(string $relativePath, string $destination, array $replacements = []): void
+    public function copyFileFromSkeleton(string $relativePath, string $destination, array $replacements = [], ?OutputInterface $output = null): void
     {
-        $source = TemplatePath::skeletonDir() . '/' . ltrim($relativePath, '/');
+        $source = TemplatePath::resolve($output) . '/' . ltrim($relativePath, '/');
         $this->copyFile($source, $destination, $replacements);
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    public function applyReplacements(string $projectRoot, array $replacements): void
+    {
+        if ($replacements === []) {
+            return;
+        }
+
+        $projectRoot = ProjectRoot::normalize($projectRoot);
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($projectRoot, \FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $item) {
+            /** @var \SplFileInfo $item */
+            if (!$item->isFile() || $this->isBinaryTemplateFile($item->getPathname())) {
+                continue;
+            }
+
+            $contents = file_get_contents($item->getPathname());
+
+            if (!is_string($contents) || !str_contains($contents, '__PINX_')) {
+                continue;
+            }
+
+            file_put_contents(
+                $item->getPathname(),
+                str_replace(array_keys($replacements), array_values($replacements), $contents),
+            );
+        }
+    }
+
+    public static function suggestPackageFromDirectory(string $name): string
+    {
+        $slug = strtolower($name);
+        $slug = preg_replace('/[^a-z0-9]+/', '_', $slug) ?? $slug;
+        $slug = trim($slug, '_');
+
+        if ($slug === '') {
+            $slug = 'app';
+        }
+
+        return 'com_my_' . $slug;
     }
 
     public static function normalizePackage(string $input): string
@@ -170,10 +266,27 @@ final class ProjectScaffolder
             throw new \InvalidArgumentException('Package name is required.');
         }
 
-        if (!preg_match('/^com_[a-z][a-z0-9_]*$/', $input)) {
-            throw new \InvalidArgumentException('Package must match com_vendor_app (e.g. com_acme_shop).');
+        $input = strtolower($input);
+        $input = preg_replace('/[^a-z0-9_]+/', '_', $input) ?? $input;
+        $input = preg_replace('/_+/', '_', $input) ?? $input;
+        $input = trim($input, '_');
+
+        if ($input === '') {
+            throw new \InvalidArgumentException('Package name is required.');
+        }
+
+        if (!preg_match('/^[a-z][a-z0-9]*(_[a-z][a-z0-9_]*)+$/', $input)) {
+            throw new \InvalidArgumentException(
+                'Package must be lowercase with underscores and at least two segments '
+                . '(e.g. com_acme_shop).',
+            );
         }
 
         return $input;
+    }
+
+    private function isBinaryTemplateFile(string $path): bool
+    {
+        return (bool) preg_match('/\.(png|jpe?g|gif|webp|ico|zip|phar)$/i', $path);
     }
 }
