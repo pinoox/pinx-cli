@@ -1,0 +1,34 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Pinoox\PinxCli\ConsoleApplication;
+use Pinoox\PinxCli\Support\PinxVersion;
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+    dirname(__DIR__, 4) . '/vendor/autoload.php',
+];
+
+foreach ($autoloadCandidates as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+
+if (!class_exists(ConsoleApplication::class)) {
+    fwrite(STDERR, "pinx-cli autoload not found. Run composer install in packages/pinx-cli.\n");
+    exit(1);
+}
+
+$args = array_slice($_SERVER['argv'] ?? [], 1);
+
+if ($args === ['-v']) {
+    fwrite(STDOUT, PinxVersion::label() . PHP_EOL);
+    exit(0);
+}
+
+(new ConsoleApplication())->run();

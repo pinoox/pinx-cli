@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Pinoox\PinxCli\Support;
+
+/**
+ * Single-app Pinoox project context.
+ *
+ * A directory is recognized when it contains app.php with a non-empty "package" key
+ * and composer.json requiring pinoox/pincore.
+ */
+final class AppContext
+{
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(
+        public readonly string $root,
+        public readonly string $package,
+        public readonly array $config,
+    ) {
+    }
+
+    public static function find(?string $start = null): ?self
+    {
+        $dir = $start ?? getcwd() ?: null;
+
+        if ($dir === null) {
+            return null;
+        }
+
+        $dir = ProjectRoot::normalize($dir);
+
+        while ($dir !== '' && $dir !== '/') {
+            $context = self::fromDirectory($dir);
+
+            if ($context !== null) {
+                return $context;
+            }
+
+            $parent = dirname($dir);
+
+            if ($parent === $dir) {
+                break;
+            }
+
+            $dir = $parent;
+        }
+
+        return null;
+    }
+
+    public static function require(?string $start = null): self
+    {
+        $context = self::find($start);
+
+        if ($context === null) {
+            throw new \RuntimeException(
+                'Not inside a Pinoox single-app project. '
+                . 'Expected app.php with a "package" key and pinoox/pincore in composer.json.',
+            );
+        }
+
+        return $context;
+    }
+
+    public static function isAppRoot(string $dir): bool
+    {
+        return self::fromDirectory(ProjectRoot::normalize($dir)) !== null;
+    }
+
+    public function appPath(): string
+    {
+        return $this->root;
+    }
+
+    public function displayName(): string
+    {
+        $name = $this->config['name'] ?? null;
+
+        return is_string($name) && $name !== '' ? $name : $this->package;
+    }
+
+    public function theme(): ?string
+    {
+        $theme = $this->config['theme'] ?? null;
+
+        return is_string($theme) && $theme !== '' ? $theme : null;
+    }
+
+    public function versionName(): ?string
+    {
+        $version = $this->config['version-name'] ?? null;
+
+        return is_string($version) && $version !== '' ? $version : null;
+    }
+
+    public function versionCode(): ?int
+    {
+        $code = $this->config['version-code'] ?? null;
+
+        return is_int($code) ? $code : (is_numeric($code) ? (int) $code : null);
+    }
+
+    private static function fromDirectory(string $dir): ?self
+    {
+        $appFile = $dir . '/app.php';
+
+        if (!is_file($appFile)) {
+            return null;
+        }
+
+        $config = require $appFile;
+
+        if (!is_array($config)) {
+            return null;
+        }
+
+        $package = $config['package'] ?? null;
+
+        if (!is_string($package) || trim($package) === '') {
+            return null;
+        }
+
+        if (!self::hasPincore($dir)) {
+            return null;
+        }
+
+        return new self($dir, trim($package), $config);
+    }
+
+    private static function hasPincore(string $dir): bool
+    {
+        if (is_dir($dir . '/pincore') && (is_file($dir . '/pincore/functions/base.php') || is_file($dir . '/pincore/launcher/bootstrap.php'))) {
+            return true;
+        }
+
+        if (is_dir($dir . '/vendor/pinoox/pincore')) {
+            return true;
+        }
+
+        $composerFile = $dir . '/composer.json';
+
+        if (!is_file($composerFile)) {
+            return false;
+        }
+
+        $composer = file_get_contents($composerFile);
+
+        return is_string($composer) && str_contains($composer, 'pinoox/pincore');
+    }
+}
