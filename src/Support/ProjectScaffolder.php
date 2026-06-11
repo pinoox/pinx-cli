@@ -288,13 +288,45 @@ final class ProjectScaffolder
     {
         $slug = strtolower($name);
         $slug = preg_replace('/[^a-z0-9]+/', '_', $slug) ?? $slug;
+        $slug = preg_replace('/_+/', '_', $slug) ?? $slug;
         $slug = trim($slug, '_');
 
         if ($slug === '') {
-            $slug = 'app';
+            return 'com_my_app';
         }
 
-        return 'com_my_' . $slug;
+        /** @var list<string> $parts */
+        $parts = array_values(array_filter(
+            explode('_', $slug),
+            static fn (string $part): bool => $part !== '',
+        ));
+
+        $prefixes = ['com', 'ir', 'org', 'net', 'io'];
+
+        if (count($parts) >= 3 && in_array($parts[0], $prefixes, true)) {
+            return $parts[0] . '_' . $parts[1] . '_' . $parts[2];
+        }
+
+        if (count($parts) === 2) {
+            if ($parts[0] === $parts[1]) {
+                return 'com_my_' . $parts[1];
+            }
+
+            return 'com_' . $parts[0] . '_' . $parts[1];
+        }
+
+        if (count($parts) >= 3) {
+            $vendor = $parts[0];
+            $app = $parts[count($parts) - 1];
+
+            if ($vendor === $app) {
+                $app = $parts[1];
+            }
+
+            return 'com_' . $vendor . '_' . $app;
+        }
+
+        return 'com_my_' . $parts[0];
     }
 
     public static function normalizePackage(string $input): string
