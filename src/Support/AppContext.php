@@ -103,6 +103,18 @@ final class AppContext
         return is_int($code) ? $code : (is_numeric($code) ? (int) $code : null);
     }
 
+    public function iconRelativePath(): string
+    {
+        $icon = $this->config['icon'] ?? null;
+
+        return is_string($icon) && $icon !== '' ? $icon : 'resource/icon.png';
+    }
+
+    public function iconPath(): string
+    {
+        return $this->root . '/' . $this->iconRelativePath();
+    }
+
     private static function fromDirectory(string $dir): ?self
     {
         $appFile = $dir . '/app.php';

@@ -94,6 +94,7 @@ final class InfoCommand extends Command
             'Portal' => $root . '/Portal',
             'Request' => $root . '/Request',
             'Flow' => $root . '/Flow',
+            'Resource' => $root . '/resource',
             'Theme' => $context->theme() ? $root . '/theme/' . $context->theme() : null,
             'Tests' => $root . '/tests',
             'Pinker' => $root . '/pinker',

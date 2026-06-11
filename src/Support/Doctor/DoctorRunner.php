@@ -524,28 +524,38 @@ final class DoctorRunner
                 detail: 'theme key not set in app.php',
                 hint: 'Set theme => "default" (or your theme folder) in app.php',
             ));
-
-            return;
+        } else {
+            $themePath = $root . '/theme/' . $theme;
+            $report->add(new CheckItem(
+                group: 'Theme',
+                id: 'theme_folder',
+                label: 'theme/' . $theme,
+                status: is_dir($themePath) ? CheckStatus::Pass : CheckStatus::Fail,
+                detail: is_dir($themePath) ? 'Present' : 'Theme folder missing',
+                hint: is_dir($themePath) ? null : 'Create theme/' . $theme . ' or fix app.php theme key',
+            ));
         }
 
-        $themePath = $root . '/theme/' . $theme;
+        $resourcePath = $root . '/resource';
         $report->add(new CheckItem(
             group: 'Theme',
-            id: 'theme_folder',
-            label: 'theme/' . $theme,
-            status: is_dir($themePath) ? CheckStatus::Pass : CheckStatus::Fail,
-            detail: is_dir($themePath) ? 'Present' : 'Theme folder missing',
-            hint: is_dir($themePath) ? null : 'Create theme/' . $theme . ' or fix app.php theme key',
+            id: 'resource_folder',
+            label: 'resource/',
+            status: is_dir($resourcePath) ? CheckStatus::Pass : CheckStatus::Warn,
+            detail: is_dir($resourcePath) ? 'Present' : 'Missing static resource folder',
+            hint: is_dir($resourcePath) ? null : 'Create resource/ for app icon and assets',
+            scored: false,
         ));
 
-        $icon = $root . '/icon.png';
+        $iconPath = $context->iconPath();
+        $iconRelative = $context->iconRelativePath();
         $report->add(new CheckItem(
             group: 'Theme',
             id: 'app_icon',
-            label: 'icon.png',
-            status: is_file($icon) ? CheckStatus::Pass : CheckStatus::Warn,
-            detail: is_file($icon) ? 'Present' : 'Missing app icon',
-            hint: is_file($icon) ? null : 'Add icon.png at project root for manager/build',
+            label: $iconRelative,
+            status: is_file($iconPath) ? CheckStatus::Pass : CheckStatus::Warn,
+            detail: is_file($iconPath) ? 'Present' : 'Missing app icon',
+            hint: is_file($iconPath) ? null : 'Add ' . $iconRelative . ' or update app.php icon key',
             scored: false,
         ));
     }
