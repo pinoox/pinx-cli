@@ -26,6 +26,8 @@ pinx release --bump=patch
 pinx doctor
 ```
 
+Run `pinx list` for a grouped overview of all commands. Shorthand aliases appear in parentheses next to each command.
+
 ## App detection
 
 A directory is treated as a Pinoox single-app project when:
@@ -37,108 +39,120 @@ Pinx walks up from the current working directory until both conditions match.
 
 ## Commands
 
-### Project lifecycle
+### Project
 
 | Command | Description |
 |---------|-------------|
 | `new` | Scaffold from `pinoox/app` template |
 | `init` | Initialize current directory |
-| `setup` | DB migrate + seed |
+| `setup` | DB migrate platform + app, then seed |
+| `doctor` | Deep health check — `--json`, `--skip-db` |
+| `info` | Show app metadata from `app.php` |
+
+### Development
+
+| Command | Description |
+|---------|-------------|
 | `dev` | Dev server (+ Vite when applicable) |
-| `migrate` | App migrations (`--rollback`, `--status`, `--platform`) |
-| `build` | `.pinx` package |
-| `doctor` | Deep health check (PHP, layout, env, DB, frontend) — `--json`, `--skip-db` |
+
+### Database
+
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
+| `migrate:run` | `migrate` | Run app migrations (`--platform` runs platform first) |
+| `migrate:status` | `migrate:st` | Migration status |
+| `migrate:rollback` | `migrate:rb` | Rollback last batch (`--ignore-fk`) |
+| `migrate:create <name>` | `migrate:cr` | Create migration file |
+| `migrate:platform` | `migrate:pl` | Run platform migrations only |
+| `seeder:run` | `seed` | Run seeders (`-c` class) |
+| `patch:run` | `patch` | Run pending patches |
+| `patch:status` | `patch:st` | Patch status |
+| `patch:rollback` | `patch:rb` | Rollback last patch batch |
+
+### Build & release
+
+| Command | Description |
+|---------|-------------|
+| `build` | Build `.pinx` package |
 | `release` | Version bump + build |
 
-### App info
+### Scaffolding
 
 | Command | Description |
 |---------|-------------|
-| `info` | Show app metadata and layout from `app.php` |
-
-### Scaffolding (`make`)
-
-| Command | Description |
-|---------|-------------|
-| `make controller <Name>` | `Controller/` |
-| `make model <Name>` | `Model/` |
-| `make migration <name>` | `database/migrations/` |
-| `make patch <name>` | `patches/` |
-| `make portal <Name>` | `Portal/` (`--service=`) |
-| `make form-request <Name>` | `Request/` |
-| `make seeder <Name>` | `database/seed/` |
-| `make test <Name>` | `tests/` (`--unit`, `--feature`, `--force`) |
+| `make <type> <name>` | controller, model, migration, patch, portal, form-request, seeder, test |
 
 ### Routes
 
 | Command | Description |
 |---------|-------------|
-| `route:actions` / `routes` | List named actions (`--validate`, `--strict`, `--json`, `--cache`) |
+| `route:actions` / `routes` | List named actions (`--validate`, `--json`) |
 
 ### Dependencies
 
-| Command | Description |
-|---------|-------------|
-| `deps status` | Composer + npm manifest status |
-| `deps install` | Install app dependencies |
-| `deps update` | Update app dependencies |
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
+| `deps <action>` | `dep` | status, install, update (legacy) |
+| `deps:status` | `deps:st` | Composer + npm status |
+| `deps:install` | `deps:i` | Install dependencies |
+| `deps:update` | `deps:up` | Update dependencies |
 
 ### Frontend
 
-| Command | Description |
-|---------|-------------|
-| `frontend info` / `fe info` | Theme stack and npm scripts |
-| `frontend dev` / `fe dev` | Vite dev server |
-| `frontend build` / `fe build` | Production build |
-| `frontend install` | npm install |
-| `frontend scaffold` | Starter files (`--stack=vue|react|twig`) |
-
-### Database extras
-
-| Command | Description |
-|---------|-------------|
-| `seeder:run` / `seed` | Run seeders (`-c` class) |
-| `patch` / `patch:run` | Run pending patches |
-| `patch:status` | Patch status |
-| `patch:rollback` | Rollback last batch |
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
+| `frontend <action>` | `fe` | info, install, build, dev, scaffold (legacy) |
+| `fe:info` | `fe:inf` | Theme stack and npm scripts |
+| `fe:install` | `fe:i` | npm install |
+| `fe:build` | `fe:b` | Production build |
+| `fe:dev` | `fe:d` | Vite dev server |
+| `fe:scaffold` | `fe:sc` | Starter files (`--stack=vue|react|twig`) |
 
 ### Schedule
 
-| Command | Description |
-|---------|-------------|
-| `schedule:list` | List cron tasks |
-| `schedule:run` | Run due tasks (`--dry-run`) |
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
+| `schedule:list` | `sched:ls` | List cron tasks |
+| `schedule:run` | `sched:run` | Run due tasks (`--dry-run`) |
 
 ### Pinker
 
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
+| `pinker <action>` | — | status, rebuild, diff, clear, overrides (legacy) |
+| `pinker:status` | `pinker:st` | Cache vs source |
+| `pinker:rebuild` | `pinker:rb` | Rebuild cache |
+| `pinker:diff` | `pinker:df` | Show differences |
+| `pinker:clear` | `pinker:cl` | Clear cache |
+| `pinker:overrides` | `pinker:ov` | List overrides |
+
+### Quality & docs
+
 | Command | Description |
 |---------|-------------|
-| `pinker status` | Compare cache vs source |
-| `pinker rebuild` | Rebuild Pinker cache |
-| `pinker diff` | Show differences |
-| `pinker clear` | Clear cache |
-| `pinker overrides` | List override files |
-
-### Docs & tests
-
-| Command | Description |
-|---------|-------------|
-| `api:docs` | REST API docs (`--format=md|html`) |
-| `graphql:docs` | GraphQL schema docs |
 | `test` / `pest` | Run app tests |
+| `api:docs` | REST API docs |
+| `graphql:docs` | GraphQL schema docs |
+
+### Meta
+
+| Command | Description |
+|---------|-------------|
+| `list` | Grouped command overview |
+| `version` | CLI version |
 
 ## Examples
 
 ```bash
-pinx info
+pinx list
+pinx migrate
+pinx migrate:st
+pinx migrate:rb
+pinx migrate:cr create_products_table
 pinx make controller ProductController
-pinx make model ProductModel
-pinx make migration create_products_table
-pinx routes --validate
-pinx deps install
-pinx fe dev
-pinx seed
-pinx pinker status
+pinx deps:install
+pinx fe:dev --open
+pinx pinker:status
 pinx test --feature
 ```
 

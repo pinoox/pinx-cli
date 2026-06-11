@@ -852,7 +852,7 @@ final class DoctorRunner
             }
         }
 
-        return PinxVersion::VERSION;
+        return PinxVersion::version();
     }
 
     private function commandVersion(string $command): ?string

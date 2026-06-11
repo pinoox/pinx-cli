@@ -34,7 +34,19 @@ final class DepsCommand extends Command
             ->addOption('no-ci', null, InputOption::VALUE_NONE, 'npm install instead of ci')
             ->addOption('plain', null, InputOption::VALUE_NONE, 'Plain output for CI')
             ->addOption('continue-on-error', null, InputOption::VALUE_NONE, 'Continue when a step fails')
-            ->setHelp('Examples: pinx deps status | pinx deps install | pinx deps update --npm-only');
+            ->setHelp(
+                <<<'HELP'
+Examples:
+  pinx deps status
+  pinx deps install
+  pinx deps update --npm-only
+
+Dedicated commands:
+  pinx deps:status
+  pinx deps:install
+  pinx deps:update
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

@@ -35,7 +35,21 @@ final class FrontendCommand extends Command
             ->addOption('serve-port', null, InputOption::VALUE_REQUIRED, 'Dev server port')
             ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start')
             ->addOption('install', null, InputOption::VALUE_NONE, 'Force npm install')
-            ->setHelp('Examples: pinx frontend info | pinx fe dev | pinx fe build');
+            ->setHelp(
+                <<<'HELP'
+Examples:
+  pinx frontend info
+  pinx fe dev
+  pinx fe build
+
+Dedicated commands:
+  pinx fe:info
+  pinx fe:install
+  pinx fe:build
+  pinx fe:dev
+  pinx fe:scaffold
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

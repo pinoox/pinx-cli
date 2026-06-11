@@ -29,7 +29,20 @@ final class PinkerCommand extends Command
             ->addArgument('action', InputArgument::REQUIRED, 'Action: ' . implode(', ', self::ACTIONS))
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force rebuild or clear')
             ->addOption('plain', null, InputOption::VALUE_NONE, 'Plain output')
-            ->setHelp('Examples: pinx pinker status | pinx pinker rebuild --force');
+            ->setHelp(
+                <<<'HELP'
+Examples:
+  pinx pinker status
+  pinx pinker rebuild --force
+
+Dedicated commands:
+  pinx pinker:status
+  pinx pinker:rebuild
+  pinx pinker:diff
+  pinx pinker:clear
+  pinx pinker:overrides
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

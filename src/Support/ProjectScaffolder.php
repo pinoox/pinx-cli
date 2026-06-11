@@ -8,6 +8,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class ProjectScaffolder
 {
+    public const TEMPLATE_PACKAGE = 'com_pinoox_app';
+    public const TEMPLATE_DISPLAY_NAME = 'Pinoox App';
+    public const TEMPLATE_DEVELOPER = 'Pinoox App Developer';
+    public const TEMPLATE_DESCRIPTION = 'Pinoox App starter — built with Pinoox';
+
     /**
      * @param array<string, string> $replacements
      */
@@ -158,7 +163,7 @@ final class ProjectScaffolder
         }
 
         if ($replacements !== []) {
-            $contents = str_replace(array_keys($replacements), array_values($replacements), $contents);
+            $contents = self::applyReplacementMap($contents, $replacements);
         }
 
         file_put_contents($destination, $contents);
@@ -187,11 +192,17 @@ final class ProjectScaffolder
             $developer = 'Developer';
         }
 
+        $description = $displayName . ' — built with Pinoox';
+
         return [
+            self::TEMPLATE_DESCRIPTION => $description,
+            self::TEMPLATE_PACKAGE => $package,
+            self::TEMPLATE_DISPLAY_NAME => $displayName,
+            self::TEMPLATE_DEVELOPER => $developer,
+            '__PINX_DESCRIPTION__' => $description,
             '__PINX_PACKAGE__' => $package,
             '__PINX_DISPLAY_NAME__' => $displayName,
             '__PINX_DEVELOPER__' => $developer,
-            '__PINX_DESCRIPTION__' => $displayName . ' — built with Pinoox',
         ];
     }
 
@@ -234,15 +245,43 @@ final class ProjectScaffolder
 
             $contents = file_get_contents($item->getPathname());
 
-            if (!is_string($contents) || !str_contains($contents, '__PINX_')) {
+            if (!is_string($contents) || !self::containsReplacementKey($contents, $replacements)) {
                 continue;
             }
 
             file_put_contents(
                 $item->getPathname(),
-                str_replace(array_keys($replacements), array_values($replacements), $contents),
+                self::applyReplacementMap($contents, $replacements),
             );
         }
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    public static function applyReplacementMap(string $contents, array $replacements): string
+    {
+        if ($replacements === []) {
+            return $contents;
+        }
+
+        uksort($replacements, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+        return str_replace(array_keys($replacements), array_values($replacements), $contents);
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    private static function containsReplacementKey(string $contents, array $replacements): bool
+    {
+        foreach (array_keys($replacements) as $key) {
+            if (str_contains($contents, $key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function suggestPackageFromDirectory(string $name): string
