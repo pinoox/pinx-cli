@@ -28,7 +28,12 @@ final class CommandCatalog
             [
                 'key' => 'database',
                 'label' => 'Database',
-                'description' => 'Migrations, seeders, and data patches',
+                'description' => 'Migrations and seeders',
+            ],
+            [
+                'key' => 'patches',
+                'label' => 'Patches',
+                'description' => 'Data patches and one-off app updates',
             ],
             [
                 'key' => 'build',
@@ -105,10 +110,10 @@ final class CommandCatalog
             'migrate:platform' => 'database',
             'seeder:run' => 'database',
             'seed' => 'database',
-            'patch' => 'database',
-            'patch:run' => 'database',
-            'patch:status' => 'database',
-            'patch:rollback' => 'database',
+            'patch' => 'patches',
+            'patch:run' => 'patches',
+            'patch:status' => 'patches',
+            'patch:rollback' => 'patches',
 
             'build' => 'build',
             'release' => 'build',
@@ -242,5 +247,46 @@ final class CommandCatalog
     public static function aliasesFor(string $commandName): array
     {
         return self::aliases()[$commandName] ?? [];
+    }
+
+    /**
+     * Commands omitted from the grouped pinx list (still available via help).
+     *
+     * @return list<string>
+     */
+    public static function hiddenFromList(): array
+    {
+        return [
+            'help',
+            'completion',
+            'list',
+            'deps',
+            'frontend',
+            'pinker',
+        ];
+    }
+
+    /**
+     * Shorthand aliases shown beside the command name in pinx list.
+     *
+     * @param list<string> $registeredAliases
+     *
+     * @return list<string>
+     */
+    public static function displayAliasesFor(string $commandName, array $registeredAliases): array
+    {
+        $aliases = self::aliasesFor($commandName);
+
+        foreach ($registeredAliases as $alias) {
+            if (str_contains($alias, ':')) {
+                continue;
+            }
+
+            if (!in_array($alias, $aliases, true)) {
+                $aliases[] = $alias;
+            }
+        }
+
+        return $aliases;
     }
 }

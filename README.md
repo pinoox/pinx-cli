@@ -26,7 +26,7 @@ pinx release --bump=patch
 pinx doctor
 ```
 
-Run `pinx list` for a grouped overview of all commands. Shorthand aliases appear in parentheses next to each command.
+Run `pinx list` for a grouped overview with descriptions and shorthand aliases in brackets. Use `pinx list --short` for names only.
 
 ## App detection
 
@@ -65,6 +65,11 @@ Pinx walks up from the current working directory until both conditions match.
 | `migrate:create <name>` | `migrate:cr` | Create migration file |
 | `migrate:platform` | `migrate:pl` | Run platform migrations only |
 | `seeder:run` | `seed` | Run seeders (`-c` class) |
+
+### Patches
+
+| Command | Shorthand | Description |
+|---------|-----------|-------------|
 | `patch:run` | `patch` | Run pending patches |
 | `patch:status` | `patch:st` | Patch status |
 | `patch:rollback` | `patch:rb` | Rollback last patch batch |
