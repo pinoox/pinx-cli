@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Support;
 
+use Symfony\Component\Process\Process;
+
 final class PinxReleaseChecker
 {
     private const PACKAGIST_P2 = 'https://repo.packagist.org/p2/pinoox/pinx-cli.json';
@@ -66,7 +68,13 @@ final class PinxReleaseChecker
         $body = $this->httpGet(self::PACKAGIST_P2);
 
         if ($body === null) {
-            return null;
+            $latest = $this->fetchLatestViaComposer();
+
+            if ($latest !== null) {
+                $this->writeCache($latest);
+            }
+
+            return $latest;
         }
 
         $data = json_decode($body, true);
@@ -174,10 +182,7 @@ final class PinxReleaseChecker
                 'timeout' => 5,
                 'header' => 'User-Agent: pinoox/pinx-cli/' . PinxVersion::version() . "\r\n",
             ],
-            'ssl' => [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-            ],
+            'ssl' => CaBundle::streamSslOptions(),
         ]);
 
         $body = @file_get_contents($url, false, $context);
@@ -202,9 +207,12 @@ final class PinxReleaseChecker
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_TIMEOUT => 5,
             CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_USERAGENT => 'pinoox/pinx-cli/' . PinxVersion::version(),
             CURLOPT_HTTPHEADER => ['Accept: application/json'],
         ]);
+
+        CaBundle::applyToCurl($handle);
 
         $body = curl_exec($handle);
         $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
@@ -215,5 +223,47 @@ final class PinxReleaseChecker
         }
 
         return $body;
+    }
+
+    private function fetchLatestViaComposer(): ?string
+    {
+        $attempts = [];
+
+        if (PinxVersion::isGlobalInstall()) {
+            $attempts[] = [null, ['composer', 'global', 'show', 'pinoox/pinx-cli', '--latest', '--format=json', '--no-ansi']];
+        }
+
+        $projectRoot = PinxVersion::projectRootFromInstall();
+
+        if ($projectRoot !== null) {
+            $attempts[] = [$projectRoot, ['composer', 'show', 'pinoox/pinx-cli', '--latest', '--format=json', '--no-ansi']];
+        }
+
+        if ($attempts === []) {
+            $attempts[] = [null, ['composer', 'show', 'pinoox/pinx-cli', '--latest', '--format=json', '--no-ansi', '--available']];
+        }
+
+        foreach ($attempts as [$cwd, $command]) {
+            $process = new Process($command, $cwd, null, null, 30);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                continue;
+            }
+
+            $data = json_decode($process->getOutput(), true);
+
+            if (!is_array($data)) {
+                continue;
+            }
+
+            $latest = $data['latest'] ?? null;
+
+            if (is_string($latest) && $latest !== '' && PinxVersion::isStable($latest)) {
+                return $latest;
+            }
+        }
+
+        return null;
     }
 }
