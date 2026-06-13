@@ -9,12 +9,15 @@ final class CorePath
     public static function resolve(string $projectRoot): string
     {
         $projectRoot = rtrim(str_replace('\\', '/', $projectRoot), '/');
-        $corePathFile = $projectRoot . '/launcher/core-path.php';
+        foreach ([
+            $projectRoot . '/platform/launcher/core-path.php',
+            $projectRoot . '/launcher/core-path.php',
+        ] as $candidate) {
+            if (is_file($candidate)) {
+                require_once $candidate;
 
-        if (is_file($corePathFile)) {
-            require_once $corePathFile;
-
-            return rtrim(pinoox_resolve_configured_core_path($projectRoot), '/');
+                return rtrim(pinoox_resolve_configured_core_path($projectRoot), '/');
+            }
         }
 
         foreach ([
