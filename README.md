@@ -84,7 +84,9 @@ See the [pinoox/app README](../app) for the full layout and config layers.
 | **Monorepo** | `composer require pinoox/pinx-cli:@dev` with a path repo | Developing pinx-cli alongside `packages/app` |
 
 ```bash
-pinx -v          # CLI version (e.g. pinx-cli 1.1.7)
+pinx -v          # quick one-line version
+pinx version     # version, install path, and update check
+pinx self-update # upgrade global or project pinx install
 pinx list        # grouped command overview
 pinx help setup  # detail for one command
 ```
@@ -325,7 +327,8 @@ Legacy `frontend` / `fe` accept `info`, `install`, `build`, `dev`, `scaffold` as
 | Command | Aliases | Description |
 |---------|---------|-------------|
 | `list` | — | Grouped command overview |
-| `version` | `ver` | CLI version |
+| `version` | `ver` | CLI version, install mode, and Packagist update check |
+| `self-update` | `self:up` | Update pinx to the latest Packagist release via Composer |
 
 ---
 

@@ -154,6 +154,8 @@ final class CommandCatalog
             'graphql:docs' => 'quality',
 
             'version' => 'meta',
+            'self-update' => 'meta',
+            'update:cli' => 'meta',
             'list' => 'meta',
             'help' => 'meta',
             'completion' => 'meta',
@@ -238,6 +240,7 @@ final class CommandCatalog
 
             // Meta
             'version' => ['ver'],
+            'self-update' => ['self:up'],
         ];
     }
 
