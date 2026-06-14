@@ -16,13 +16,30 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'setup',
-    description: 'Prepare database: migrate platform + app, then run seeders',
+    description: 'Prepare database: platform + app migrations, seeders, and patches',
 )]
 final class SetupCommand extends Command
 {
     protected function configure(): void
     {
-        $this->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation');
+        $this
+            ->addOption('yes', 'y', InputOption::VALUE_NONE, 'Skip confirmation')
+            ->setHelp(
+                <<<'HELP'
+One-shot database preparation for the current app:
+
+  1. Platform migrations
+  2. App migrations
+  3. Platform seeders
+  4. App seeders
+  5. Platform patches
+  6. App patches
+
+Examples:
+  pinx setup
+  pinx setup --yes
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -38,14 +55,15 @@ final class SetupCommand extends Command
             return Command::FAILURE;
         }
 
-        if (!$input->getOption('yes') && !$io->confirm('Run platform + app migrations for ' . $package . '?', true)) {
+        if (!$input->getOption('yes') && !$io->confirm('Run migrations, seeders, and patches for ' . $package . '?', true)) {
             return Command::SUCCESS;
         }
 
         $runner = new PincoreRunner($root);
+        $platform = 'platform';
 
         $io->section('Platform migrations');
-        if ($runner->run(['migrate', 'platform', '-n'], $output) !== 0) {
+        if ($runner->run(['migrate', $platform, '-n'], $output) !== 0) {
             return Command::FAILURE;
         }
 
@@ -54,8 +72,25 @@ final class SetupCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->section('Seeders');
-        $runner->run(['seed', $package, '-n'], $output);
+        $io->section('Platform seeders');
+        if ($runner->run(['seed', $platform, '-n'], $output) !== 0) {
+            return Command::FAILURE;
+        }
+
+        $io->section('App seeders');
+        if ($runner->run(['seed', $package, '-n'], $output) !== 0) {
+            return Command::FAILURE;
+        }
+
+        $io->section('Platform patches');
+        if ($runner->run(['patch', $platform], $output) !== 0) {
+            return Command::FAILURE;
+        }
+
+        $io->section('App patches');
+        if ($runner->run(['patch', $package], $output) !== 0) {
+            return Command::FAILURE;
+        }
 
         $io->success('Setup complete.');
 

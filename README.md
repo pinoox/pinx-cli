@@ -16,7 +16,7 @@ composer global require pinoox/pinx-cli
 pinx new my-shop              # suggests com_my_shop — confirm or edit in the wizard
 cd my-shop
 cp .env.example .env          # set DB_* if you use a database
-pinx setup                    # migrate platform + app, run seeders
+pinx setup                    # platform + app migrate, seed, and patch
 pinx dev                      # http://127.0.0.1:8000
 ```
 
@@ -30,7 +30,7 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 | `composer global require` | Installs the `pinx` command on your machine |
 | `pinx new my-shop` | Scaffolds from `pinoox/app`; wizard suggests a 3-part package (e.g. `com_my_shop`) |
 | `.env` | Database and project paths — copy from `.env.example` |
-| `pinx setup` | One-shot: platform migrations → app migrations → seeders |
+| `pinx setup` | One-shot: platform/app migrations → platform/app seeders → platform/app patches |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
 
 Package names follow `com_{vendor}_{name}` — e.g. `com_acme_shop`, `ir_yekdo_app`. Already inside an empty folder? Use `pinx init` instead of `pinx new`.
@@ -227,7 +227,7 @@ pinx list --raw
 |---------|---------|-------------|
 | `new` | — | Scaffold from `pinoox/app` (wizard or flags) |
 | `init` | — | Initialize the current directory (`--force` to overwrite) |
-| `setup` | — | DB: migrate platform + app, then seed |
+| `setup` | — | DB: platform + app migrate, seed, and patch |
 | `doctor` | `dr` | Health check — `--json`, `--skip-db`, `--skip-frontend` |
 | `info` | `inf` | Show metadata from `app.php` |
 
