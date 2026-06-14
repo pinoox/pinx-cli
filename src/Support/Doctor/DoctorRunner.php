@@ -135,10 +135,9 @@ final class DoctorRunner
     private function checkPhpExtensions(DoctorReport $report): void
     {
         $required = [
-            'mysqli' => 'MySQL database driver',
-            'zip' => 'Pinx package build/extract',
             'mbstring' => 'Unicode string handling',
             'json' => 'API and config parsing',
+            'zip' => 'Pinx package build/extract',
         ];
 
         foreach ($required as $ext => $why) {
@@ -153,11 +152,26 @@ final class DoctorRunner
             ));
         }
 
+        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+        $pdoExtension = $this->pdoExtensionForDriver($driver);
+
+        if ($pdoExtension !== null) {
+            $loaded = extension_loaded($pdoExtension);
+            $report->add(new CheckItem(
+                group: 'PHP',
+                id: 'ext_' . $pdoExtension,
+                label: 'ext-' . $pdoExtension,
+                status: $loaded ? CheckStatus::Pass : CheckStatus::Fail,
+                detail: 'PDO driver for DB_CONNECTION=' . $driver,
+                hint: $loaded ? null : 'Enable ext-' . $pdoExtension . ' in php.ini for the configured database driver',
+            ));
+        }
+
         $recommended = [
             'curl' => 'HTTP client and external APIs',
             'openssl' => 'TLS and package signing',
             'fileinfo' => 'Upload MIME detection',
-            'pdo' => 'Alternative DB layer',
+            'pdo' => 'Database abstraction layer',
             'dom' => 'XML/HTML parsing',
             'gd' => 'Image processing',
             'intl' => 'Locale and formatting',
@@ -608,49 +622,74 @@ final class DoctorRunner
 
     private function checkDatabase(DoctorReport $report): void
     {
-        if (!extension_loaded('mysqli')) {
+        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+        $pdoExtension = $this->pdoExtensionForDriver($driver);
+
+        if ($pdoExtension === null) {
             $report->add(new CheckItem(
                 group: 'Database',
                 id: 'db_connection',
-                label: 'MySQL connection',
+                label: 'Database connection',
                 status: CheckStatus::Skip,
-                detail: 'Skipped — ext-mysqli not loaded',
+                detail: 'Skipped — unsupported DB_CONNECTION: ' . $driver,
                 scored: false,
             ));
 
             return;
         }
 
-        $host = $this->env['DB_HOST'] ?? '';
-        $port = (int) ($this->env['DB_PORT'] ?? 3306);
-        $database = $this->env['DB_DATABASE'] ?? '';
-        $username = $this->env['DB_USERNAME'] ?? '';
-        $password = $this->env['DB_PASSWORD'] ?? '';
-
-        if ($host === '' || $database === '' || $username === '') {
+        if (!extension_loaded('pdo') || !extension_loaded($pdoExtension)) {
             $report->add(new CheckItem(
                 group: 'Database',
                 id: 'db_connection',
-                label: 'MySQL connection',
-                status: CheckStatus::Warn,
-                detail: 'DB credentials incomplete in .env',
-                hint: 'Fill DB_HOST, DB_DATABASE, and DB_USERNAME in .env then run pinx setup',
+                label: 'Database connection',
+                status: CheckStatus::Skip,
+                detail: 'Skipped — ext-pdo or ext-' . $pdoExtension . ' not loaded',
+                scored: false,
             ));
 
             return;
         }
 
-        mysqli_report(MYSQLI_REPORT_OFF);
-        $mysqli = @new \mysqli($host, $username, $password, '', $port);
+        if ($driver === 'sqlite') {
+            $this->checkSqliteDatabase($report);
 
-        if ($mysqli->connect_errno) {
+            return;
+        }
+
+        $this->checkPdoDatabase($report, $driver);
+    }
+
+    private function checkSqliteDatabase(DoctorReport $report): void
+    {
+        $database = $this->env['DB_DATABASE'] ?? '';
+
+        if ($database === '') {
             $report->add(new CheckItem(
                 group: 'Database',
                 id: 'db_connection',
-                label: 'MySQL connection',
+                label: 'SQLite database',
+                status: CheckStatus::Warn,
+                detail: 'DB_DATABASE is empty in .env',
+                hint: 'Set DB_DATABASE to the SQLite file path',
+            ));
+
+            return;
+        }
+
+        try {
+            $pdo = new \PDO('sqlite:' . $database, null, null, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->query('SELECT 1');
+        } catch (\PDOException $e) {
+            $report->add(new CheckItem(
+                group: 'Database',
+                id: 'db_connection',
+                label: 'SQLite database',
                 status: CheckStatus::Fail,
-                detail: $mysqli->connect_error,
-                hint: 'Verify DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD and that MySQL is running',
+                detail: $e->getMessage(),
+                hint: 'Verify DB_DATABASE points to a valid SQLite file',
             ));
 
             return;
@@ -659,22 +698,129 @@ final class DoctorRunner
         $report->add(new CheckItem(
             group: 'Database',
             id: 'db_connection',
-            label: 'MySQL server',
+            label: 'SQLite database',
+            status: CheckStatus::Pass,
+            detail: $database,
+        ));
+    }
+
+    private function checkPdoDatabase(DoctorReport $report, string $driver): void
+    {
+        $host = $this->env['DB_HOST'] ?? '';
+        $port = (int) ($this->env['DB_PORT'] ?? match ($driver) {
+            'pgsql' => 5432,
+            'sqlsrv' => 1433,
+            default => 3306,
+        });
+        $database = $this->env['DB_DATABASE'] ?? '';
+        $username = $this->env['DB_USERNAME'] ?? '';
+        $password = $this->env['DB_PASSWORD'] ?? '';
+
+        if ($host === '' || $database === '' || $username === '') {
+            $report->add(new CheckItem(
+                group: 'Database',
+                id: 'db_connection',
+                label: 'Database connection',
+                status: CheckStatus::Warn,
+                detail: 'DB credentials incomplete in .env',
+                hint: 'Fill DB_HOST, DB_DATABASE, and DB_USERNAME in .env then run pinx setup',
+            ));
+
+            return;
+        }
+
+        $dsn = $this->pdoDsnForDriver($driver, $host, $port, null);
+
+        if ($dsn === null) {
+            return;
+        }
+
+        try {
+            $pdo = new \PDO($dsn, $username, $password, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->query('SELECT 1');
+        } catch (\PDOException $e) {
+            $report->add(new CheckItem(
+                group: 'Database',
+                id: 'db_connection',
+                label: 'Database server',
+                status: CheckStatus::Fail,
+                detail: $e->getMessage(),
+                hint: 'Verify DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD and that the server is running',
+            ));
+
+            return;
+        }
+
+        $report->add(new CheckItem(
+            group: 'Database',
+            id: 'db_connection',
+            label: 'Database server',
             status: CheckStatus::Pass,
             detail: $host . ':' . $port,
         ));
 
-        $dbSelected = @$mysqli->select_db($database);
+        $databaseDsn = $this->pdoDsnForDriver($driver, $host, $port, $database);
+
+        if ($databaseDsn === null) {
+            return;
+        }
+
+        try {
+            $pdo = new \PDO($databaseDsn, $username, $password, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->query('SELECT 1');
+            $dbExists = true;
+        } catch (\PDOException) {
+            $dbExists = false;
+        }
+
         $report->add(new CheckItem(
             group: 'Database',
             id: 'db_database',
             label: 'Database exists',
-            status: $dbSelected ? CheckStatus::Pass : CheckStatus::Warn,
+            status: $dbExists ? CheckStatus::Pass : CheckStatus::Warn,
             detail: $database,
-            hint: $dbSelected ? null : 'Create database "' . $database . '" or update DB_DATABASE in .env',
+            hint: $dbExists ? null : 'Create database "' . $database . '" or update DB_DATABASE in .env',
         ));
+    }
 
-        $mysqli->close();
+    private function pdoExtensionForDriver(string $driver): ?string
+    {
+        return match ($driver) {
+            'mysql', 'mariadb' => 'pdo_mysql',
+            'pgsql' => 'pdo_pgsql',
+            'sqlite' => 'pdo_sqlite',
+            'sqlsrv' => 'pdo_sqlsrv',
+            default => null,
+        };
+    }
+
+    private function pdoDsnForDriver(string $driver, string $host, int $port, ?string $database): ?string
+    {
+        return match ($driver) {
+            'mysql', 'mariadb' => sprintf(
+                'mysql:host=%s;port=%d%s;charset=utf8mb4',
+                $host,
+                $port,
+                $database !== null ? ';dbname=' . $database : '',
+            ),
+            'pgsql' => sprintf(
+                'pgsql:host=%s;port=%d%s',
+                $host,
+                $port,
+                $database !== null ? ';dbname=' . $database : '',
+            ),
+            'sqlsrv' => sprintf(
+                'sqlsrv:Server=%s,%d%s',
+                $host,
+                $port,
+                $database !== null ? ';Database=' . $database : '',
+            ),
+            default => null,
+        };
     }
 
     private function checkFrontend(DoctorReport $report, AppContext $context): void
