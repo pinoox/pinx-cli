@@ -62,6 +62,17 @@ trait RunsForApp
                 continue;
             }
 
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    if ($item === null || $item === '') {
+                        continue;
+                    }
+                    $args[] = '--' . $name . '=' . (string) $item;
+                }
+
+                continue;
+            }
+
             $args[] = '--' . $name . '=' . (string) $value;
         }
 

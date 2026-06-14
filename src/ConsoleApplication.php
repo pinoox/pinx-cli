@@ -6,12 +6,23 @@ namespace Pinoox\PinxCli;
 
 use Pinoox\PinxCli\Command\ApiDocsCommand;
 use Pinoox\PinxCli\Command\BuildCommand;
+use Pinoox\PinxCli\Command\DbCreateCommand;
+use Pinoox\PinxCli\Command\DbListCommand;
+use Pinoox\PinxCli\Command\DbPrefixCommand;
+use Pinoox\PinxCli\Command\DbShowCommand;
+use Pinoox\PinxCli\Command\DbTestCommand;
+use Pinoox\PinxCli\Command\DbUpdateCommand;
 use Pinoox\PinxCli\Command\DepsCommand;
 use Pinoox\PinxCli\Command\DepsInstallCommand;
 use Pinoox\PinxCli\Command\DepsStatusCommand;
 use Pinoox\PinxCli\Command\DepsUpdateCommand;
 use Pinoox\PinxCli\Command\DevCommand;
 use Pinoox\PinxCli\Command\DoctorCommand;
+use Pinoox\PinxCli\Command\FileDeleteCommand;
+use Pinoox\PinxCli\Command\FileListCommand;
+use Pinoox\PinxCli\Command\FilePurgeCommand;
+use Pinoox\PinxCli\Command\FileShowCommand;
+use Pinoox\PinxCli\Command\FileUpdateCommand;
 use Pinoox\PinxCli\Command\FeBuildCommand;
 use Pinoox\PinxCli\Command\FeDevCommand;
 use Pinoox\PinxCli\Command\FeInfoCommand;
@@ -32,6 +43,10 @@ use Pinoox\PinxCli\Command\NewCommand;
 use Pinoox\PinxCli\Command\PatchRollbackCommand;
 use Pinoox\PinxCli\Command\PatchRunCommand;
 use Pinoox\PinxCli\Command\PatchStatusCommand;
+use Pinoox\PinxCli\Command\PermissionCreateCommand;
+use Pinoox\PinxCli\Command\PermissionDeleteCommand;
+use Pinoox\PinxCli\Command\PermissionListCommand;
+use Pinoox\PinxCli\Command\PermissionShowCommand;
 use Pinoox\PinxCli\Command\PinkerClearCommand;
 use Pinoox\PinxCli\Command\PinkerCommand;
 use Pinoox\PinxCli\Command\PinkerDiffCommand;
@@ -39,6 +54,12 @@ use Pinoox\PinxCli\Command\PinkerOverridesCommand;
 use Pinoox\PinxCli\Command\PinkerRebuildCommand;
 use Pinoox\PinxCli\Command\PinkerStatusCommand;
 use Pinoox\PinxCli\Command\ReleaseCommand;
+use Pinoox\PinxCli\Command\RoleCreateCommand;
+use Pinoox\PinxCli\Command\RoleDeleteCommand;
+use Pinoox\PinxCli\Command\RoleListCommand;
+use Pinoox\PinxCli\Command\RolePermissionCommand;
+use Pinoox\PinxCli\Command\RoleShowCommand;
+use Pinoox\PinxCli\Command\RoleUpdateCommand;
 use Pinoox\PinxCli\Command\RouteActionsCommand;
 use Pinoox\PinxCli\Command\ScheduleListCommand;
 use Pinoox\PinxCli\Command\ScheduleRunCommand;
@@ -46,6 +67,21 @@ use Pinoox\PinxCli\Command\SeederRunCommand;
 use Pinoox\PinxCli\Command\SelfUpdateCommand;
 use Pinoox\PinxCli\Command\SetupCommand;
 use Pinoox\PinxCli\Command\TestCommand;
+use Pinoox\PinxCli\Command\TokenCreateCommand;
+use Pinoox\PinxCli\Command\TokenDeleteCommand;
+use Pinoox\PinxCli\Command\TokenListCommand;
+use Pinoox\PinxCli\Command\TokenPurgeCommand;
+use Pinoox\PinxCli\Command\TokenRevokeUserCommand;
+use Pinoox\PinxCli\Command\TokenShowCommand;
+use Pinoox\PinxCli\Command\TokenUpdateCommand;
+use Pinoox\PinxCli\Command\UserCreateCommand;
+use Pinoox\PinxCli\Command\UserDeleteCommand;
+use Pinoox\PinxCli\Command\UserListCommand;
+use Pinoox\PinxCli\Command\UserPasswordCommand;
+use Pinoox\PinxCli\Command\UserRoleCommand;
+use Pinoox\PinxCli\Command\UserShowCommand;
+use Pinoox\PinxCli\Command\UserStatusCommand;
+use Pinoox\PinxCli\Command\UserUpdateCommand;
 use Pinoox\PinxCli\Command\VersionCommand;
 use Pinoox\PinxCli\Support\CommandCatalog;
 use Pinoox\PinxCli\Support\PinxVersion;
@@ -76,6 +112,12 @@ final class ConsoleApplication extends Application
             new MigrateCreateCommand(),
             new MigratePlatformCommand(),
             new SeederRunCommand(),
+            new DbListCommand(),
+            new DbShowCommand(),
+            new DbTestCommand(),
+            new DbCreateCommand(),
+            new DbUpdateCommand(),
+            new DbPrefixCommand(),
             new PatchRunCommand(),
             new PatchStatusCommand(),
             new PatchRollbackCommand(),
@@ -89,6 +131,42 @@ final class ConsoleApplication extends Application
 
             // Routes
             new RouteActionsCommand(),
+
+            // Users
+            new UserCreateCommand(),
+            new UserListCommand(),
+            new UserShowCommand(),
+            new UserUpdateCommand(),
+            new UserStatusCommand(),
+            new UserPasswordCommand(),
+            new UserDeleteCommand(),
+            new UserRoleCommand(),
+
+            new RoleListCommand(),
+            new RoleCreateCommand(),
+            new RoleShowCommand(),
+            new RoleUpdateCommand(),
+            new RoleDeleteCommand(),
+            new RolePermissionCommand(),
+
+            new PermissionListCommand(),
+            new PermissionCreateCommand(),
+            new PermissionShowCommand(),
+            new PermissionDeleteCommand(),
+
+            new TokenListCommand(),
+            new TokenShowCommand(),
+            new TokenCreateCommand(),
+            new TokenUpdateCommand(),
+            new TokenDeleteCommand(),
+            new TokenRevokeUserCommand(),
+            new TokenPurgeCommand(),
+
+            new FileListCommand(),
+            new FileShowCommand(),
+            new FileUpdateCommand(),
+            new FileDeleteCommand(),
+            new FilePurgeCommand(),
 
             // Dependencies
             new DepsCommand(),

@@ -28,7 +28,7 @@ final class CommandCatalog
             [
                 'key' => 'database',
                 'label' => 'Database',
-                'description' => 'Migrations and seeders',
+                'description' => 'Connections, migrations, and seeders',
             ],
             [
                 'key' => 'patches',
@@ -44,6 +44,26 @@ final class CommandCatalog
                 'key' => 'scaffold',
                 'label' => 'Scaffolding',
                 'description' => 'Generate controllers, models, tests, and more',
+            ],
+            [
+                'key' => 'users',
+                'label' => 'Users',
+                'description' => 'Create and manage app users from CLI',
+            ],
+            [
+                'key' => 'access',
+                'label' => 'Roles & permissions',
+                'description' => 'Manage roles and permission keys',
+            ],
+            [
+                'key' => 'tokens',
+                'label' => 'Tokens',
+                'description' => 'Session tokens and API keys',
+            ],
+            [
+                'key' => 'files',
+                'label' => 'Files',
+                'description' => 'Uploaded files and storage records',
             ],
             [
                 'key' => 'routes',
@@ -110,6 +130,21 @@ final class CommandCatalog
             'migrate:platform' => 'database',
             'seeder:run' => 'database',
             'seed' => 'database',
+
+            'db:list' => 'database',
+            'databases' => 'database',
+            'db:show' => 'database',
+            'database:show' => 'database',
+            'db:test' => 'database',
+            'database:test' => 'database',
+            'db:create' => 'database',
+            'database:create' => 'database',
+            'make:db' => 'database',
+            'db:update' => 'database',
+            'database:update' => 'database',
+            'db:prefix' => 'database',
+            'database:prefix' => 'database',
+
             'patch' => 'patches',
             'patch:run' => 'patches',
             'patch:status' => 'patches',
@@ -123,6 +158,58 @@ final class CommandCatalog
 
             'route:actions' => 'routes',
             'routes' => 'routes',
+
+            'user:create' => 'users',
+            'make:user' => 'users',
+            'user:list' => 'users',
+            'users' => 'users',
+            'user:show' => 'users',
+            'user:update' => 'users',
+            'user:status' => 'users',
+            'user:password' => 'users',
+            'user:passwd' => 'users',
+            'user:delete' => 'users',
+            'user:role' => 'users',
+            'user:role:assign' => 'users',
+
+            'role:list' => 'access',
+            'roles' => 'access',
+            'role:create' => 'access',
+            'make:role' => 'access',
+            'role:show' => 'access',
+            'role:update' => 'access',
+            'role:delete' => 'access',
+            'role:permission' => 'access',
+            'role:permissions' => 'access',
+
+            'permission:list' => 'access',
+            'permissions' => 'access',
+            'permission:create' => 'access',
+            'make:permission' => 'access',
+            'permission:show' => 'access',
+            'permission:delete' => 'access',
+
+            'token:list' => 'tokens',
+            'tokens' => 'tokens',
+            'token:show' => 'tokens',
+            'token:create' => 'tokens',
+            'make:token' => 'tokens',
+            'token:update' => 'tokens',
+            'token:delete' => 'tokens',
+            'token:remove' => 'tokens',
+            'token:revoke-user' => 'tokens',
+            'token:revoke' => 'tokens',
+            'token:purge' => 'tokens',
+            'token:cleanup' => 'tokens',
+
+            'file:list' => 'files',
+            'files' => 'files',
+            'file:show' => 'files',
+            'file:update' => 'files',
+            'file:delete' => 'files',
+            'file:remove' => 'files',
+            'file:purge' => 'files',
+            'file:cleanup' => 'files',
 
             'deps' => 'deps',
             'dep' => 'deps',
@@ -204,12 +291,42 @@ final class CommandCatalog
             'patch:status' => ['patch:st'],
             'patch:rollback' => ['patch:rb'],
 
+            'db:list' => ['databases'],
+            'db:show' => ['database:show'],
+            'db:test' => ['database:test'],
+            'db:create' => ['database:create', 'make:db'],
+            'db:update' => ['database:update'],
+            'db:prefix' => ['database:prefix'],
+
             // Build & release
             'build' => ['bld'],
             'release' => ['rel'],
 
             // Scaffolding
             'make' => ['mk'],
+
+            // Users
+            'user:list' => ['users'],
+            'user:password' => ['user:passwd'],
+            'user:create' => ['make:user'],
+            'user:role' => ['user:role:assign'],
+
+            'role:list' => ['roles'],
+            'role:create' => ['make:role'],
+            'role:permission' => ['role:permissions'],
+
+            'permission:list' => ['permissions'],
+            'permission:create' => ['make:permission'],
+
+            'token:list' => ['tokens'],
+            'token:create' => ['make:token'],
+            'token:delete' => ['token:remove'],
+            'token:revoke-user' => ['token:revoke'],
+            'token:purge' => ['token:cleanup'],
+
+            'file:list' => ['files'],
+            'file:delete' => ['file:remove'],
+            'file:purge' => ['file:cleanup'],
 
             // Dependencies
             'deps:status' => ['deps:st'],

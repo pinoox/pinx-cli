@@ -104,6 +104,16 @@ pinx migrate                # run app migrations (--platform runs platform first
 pinx migrate:st             # migration status
 pinx migrate:cr create_products_table
 
+pinx db:list                # platform + app connections (--test, --json)
+pinx db:show platform       # connection details
+pinx db:test                # probe connectivity
+
+pinx user:create admin --password=secret --role=admin
+pinx role:list
+pinx permission:list
+pinx token:list
+pinx file:list
+
 pinx make controller ProductController
 pinx make model ProductModel
 pinx make migration create_products_table
@@ -196,10 +206,14 @@ Run `pinx list` for a sectioned overview. Shorthand aliases appear in brackets. 
 ```
 Project        Scaffold and inspect the single-app project
 Development    Local server and day-to-day workflow
-Database       Migrations and seeders
+Database       Connections, migrations, and seeders
 Patches        Data patches and one-off app updates
 Build & release  Package and ship .pinx artifacts
 Scaffolding    Generate controllers, models, tests, and more
+Users          Create and manage app users from CLI
+Roles & permissions  Manage roles and permission keys
+Tokens         Session tokens and API keys
+Files          Uploaded files and storage records
 Routes         Named actions and route diagnostics
 Dependencies   Composer and npm dependency tooling
 Frontend       Theme assets, Vite, and npm scripts
@@ -247,6 +261,12 @@ pinx list --raw
 | `migrate:create <name>` | `migrate:cr` | Create migration file |
 | `migrate:platform` | `migrate:pl` | Platform migrations only |
 | `seeder:run` | `seed` | Run seeders (`-c` class) |
+| `db:list` | `databases` | List platform and app connections (`--test`, `--json`) |
+| `db:show [target]` | `database:show` | Show connection details |
+| `db:test [target]` | `database:test` | Test connectivity (or ad-hoc `--host`, `--database`, …) |
+| `db:create [target]` | `database:create`, `make:db` | Configure platform or app DB (`--set`, `--driver`, …) |
+| `db:update [target]` | `database:update` | Update connection settings |
+| `db:prefix [package] [prefix]` | `database:prefix` | Change app table prefix (`--use`) |
 
 ### Patches
 
@@ -255,6 +275,56 @@ pinx list --raw
 | `patch:run` | `patch` | Run pending patches |
 | `patch:status` | `patch:st` | Patch status |
 | `patch:rollback` | `patch:rb` | Rollback last patch batch |
+
+### Users
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `user:create` | `make:user` | Create a user (`--username`, `--password`, `--email`, `--role`) |
+| `user:list` | `users` | List users (`--status`, `--json`) |
+| `user:show` | — | Show one user |
+| `user:update` | — | Update profile fields |
+| `user:status` | — | Set status (`active`, `inactive`, `suspend`, `pending`) |
+| `user:password` | `user:passwd` | Admin password reset (`--revoke-sessions`) |
+| `user:delete` | — | Delete user (`--force`) |
+| `user:role` | `user:role:assign` | Attach or sync roles (`--role`, `--sync`) |
+
+### Roles & permissions
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `role:list` | `roles` | List roles (`--json`) |
+| `role:create` | `make:role` | Create role (`--key`, `--name`, `--description`) |
+| `role:show <role>` | — | Show role (`--permissions`, `--json`) |
+| `role:update <role>` | — | Update role fields |
+| `role:delete <role>` | — | Delete role (`--force`) |
+| `role:permission <role>` | `role:permissions` | Attach/detach permissions (`--attach`, `--detach`, `--sync`) |
+| `permission:list` | `permissions` | List permissions (`--json`) |
+| `permission:create` | `make:permission` | Create permission |
+| `permission:show <permission>` | — | Show permission (`--roles`, `--json`) |
+| `permission:delete <permission>` | — | Delete permission (`--force`) |
+
+### Tokens
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `token:list` | `tokens` | List session tokens (`--json`) |
+| `token:show <token>` | — | Show token (`--reveal`, `--json`) |
+| `token:create` | `make:token` | Create token (`--user`, `--name`, `--lifetime`, …) |
+| `token:update <token>` | — | Update token metadata or lifetime |
+| `token:delete <token>` | `token:remove` | Delete token (`--force`) |
+| `token:revoke-user <user>` | `token:revoke` | Revoke all tokens for a user |
+| `token:purge` | `token:cleanup` | Delete expired tokens (`--force`, `--json`) |
+
+### Files
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `file:list` | `files` | List uploads (`--group`, `--json`) |
+| `file:show <file>` | — | Show file metadata |
+| `file:update <file>` | — | Update metadata or access |
+| `file:delete <file>` | `file:remove` | Delete record and/or storage (`--db-only`, `--storage-only`, `--force`) |
+| `file:purge` | `file:cleanup` | Bulk delete by group or age (`--group`, `--older-than`, `--force`) |
 
 ### Build & release
 
