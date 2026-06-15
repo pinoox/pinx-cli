@@ -40,7 +40,7 @@ final class InfoCommand extends Command
             ['Enabled', $this->formatBool($config['enable'] ?? true)],
             ['Language', (string) ($config['lang'] ?? '—')],
             ['Developer', (string) ($config['developer'] ?? '—')],
-            ['Description', (string) ($config['description'] ?? '—')],
+            ['Description', $context->description() !== '' ? $context->description() : '—'],
         ];
 
         $frontend = $config['frontend']['stack'] ?? null;

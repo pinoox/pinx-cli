@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Support;
 
+use Pinoox\PinxCli\Support\Manifest\ManifestLabel;
+
 /**
  * Single-app Pinoox project context.
  *
@@ -75,11 +77,71 @@ final class AppContext
         return $this->root;
     }
 
-    public function displayName(): string
+    public function displayName(?string $locale = null): string
     {
-        $name = $this->config['name'] ?? null;
+        $locale ??= $this->locale();
+        $paths = $this->langPaths();
+        $fallbackLocale = $this->locale();
 
-        return is_string($name) && $name !== '' ? $name : $this->package;
+        foreach (['title', 'name'] as $field) {
+            if (!array_key_exists($field, $this->config)) {
+                continue;
+            }
+
+            $nameFallback = $this->config['name'] ?? $this->package;
+            if (ManifestLabel::isLangRef($nameFallback) || ManifestLabel::isLocaleMap($nameFallback)) {
+                $nameFallback = $this->package;
+            }
+
+            $fallback = $field === 'name' && is_string($nameFallback) ? $nameFallback : $this->package;
+            $resolved = ManifestLabel::resolve(
+                $this->config[$field],
+                $paths,
+                $locale,
+                $fallback,
+                $fallbackLocale,
+            );
+
+            if ($resolved !== '') {
+                return $resolved;
+            }
+        }
+
+        return $this->package;
+    }
+
+    public function description(?string $locale = null): string
+    {
+        $locale ??= $this->locale();
+
+        if (!array_key_exists('description', $this->config)) {
+            return '';
+        }
+
+        return ManifestLabel::resolve(
+            $this->config['description'],
+            $this->langPaths(),
+            $locale,
+            '',
+            $this->locale(),
+        );
+    }
+
+    public function locale(): string
+    {
+        $lang = $this->config['lang'] ?? 'en';
+
+        return is_string($lang) && $lang !== '' ? $lang : 'en';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function langPaths(): array
+    {
+        $path = $this->root . '/lang';
+
+        return is_dir($path) ? [$path] : [];
     }
 
     public function theme(): ?string
