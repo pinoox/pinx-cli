@@ -47,6 +47,9 @@ use Pinoox\PinxCli\Command\PermissionCreateCommand;
 use Pinoox\PinxCli\Command\PermissionDeleteCommand;
 use Pinoox\PinxCli\Command\PermissionListCommand;
 use Pinoox\PinxCli\Command\PermissionShowCommand;
+use Pinoox\PinxCli\Command\PinionCleanCommand;
+use Pinoox\PinxCli\Command\PinionInfoCommand;
+use Pinoox\PinxCli\Command\PinionListCommand;
 use Pinoox\PinxCli\Command\PinkerClearCommand;
 use Pinoox\PinxCli\Command\PinkerCommand;
 use Pinoox\PinxCli\Command\PinkerDiffCommand;
@@ -167,6 +170,10 @@ final class ConsoleApplication extends Application
             new FileUpdateCommand(),
             new FileDeleteCommand(),
             new FilePurgeCommand(),
+
+            new PinionListCommand(),
+            new PinionInfoCommand(),
+            new PinionCleanCommand(),
 
             // Dependencies
             new DepsCommand(),

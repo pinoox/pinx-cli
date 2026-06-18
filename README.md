@@ -326,6 +326,16 @@ pinx list --raw
 | `file:delete <file>` | `file:remove` | Delete record and/or storage (`--db-only`, `--storage-only`, `--force`) |
 | `file:purge` | `file:cleanup` | Bulk delete by group or age (`--group`, `--older-than`, `--force`) |
 
+### Pinion (resumable uploads)
+
+Forwarded to `php pinoox pinion:*` — temp chunked upload sessions under `storage/pinion`.
+
+| Command | Description |
+|---------|-------------|
+| `pinion:list` | List sessions (`--status`, `--json`) |
+| `pinion:info <upload_id>` | Session detail |
+| `pinion:clean` | Remove expired sessions (`--abort=<id>`) |
+
 ### Build & release
 
 | Command | Aliases | Description |

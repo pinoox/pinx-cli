@@ -1,23 +1,7 @@
 # =============================================================================
-# Pincore — runtime, secrets, generated artifacts
+# Pinx CLI — runtime, secrets, generated artifacts
 # =============================================================================
 
-# Baker cache & build output (~pinker)
-/pinker/*
-!/pinker/.gitkeep
-
-# Writable storage (logs, cache, sessions)
-/storage/*
-!/storage/.gitkeep
-!/storage/.htaccess
-!/storage/web.config
-!/storage/nginx.conf
-!/storage/Caddyfile
-!/storage/**/.gitkeep
-
-# App packages created at runtime (standalone dev / tests)
-/apps/*
-!/apps/.gitkeep
 
 # Environment & local credentials
 .env

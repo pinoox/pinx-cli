@@ -41,6 +41,10 @@ $commands = [
     ['FileUpdateCommand', 'file:update', 'Update file metadata or access', [], [], ['file'], ['metadata' => 'VALUE_REQUIRED', 'access' => 'VALUE_REQUIRED', 'name' => 'VALUE_REQUIRED']],
     ['FileDeleteCommand', 'file:delete', 'Delete a file record and/or storage asset', ['file:remove'], [], ['file'], ['db-only' => 'VALUE_NONE', 'storage-only' => 'VALUE_NONE', 'force' => 'VALUE_NONE']],
     ['FilePurgeCommand', 'file:purge', 'Bulk-delete files by group or age', ['file:cleanup'], [], [], ['group' => 'VALUE_REQUIRED', 'older-than' => 'VALUE_REQUIRED', 'force' => 'VALUE_NONE']],
+    // Pinion
+    ['PinionListCommand', 'pinion:list', 'List Pinion upload sessions', [], [], [], ['status' => 'VALUE_REQUIRED', 'json' => 'VALUE_NONE']],
+    ['PinionInfoCommand', 'pinion:info', 'Show a Pinion upload session', [], [], ['upload_id'], ['json' => 'VALUE_NONE']],
+    ['PinionCleanCommand', 'pinion:clean', 'Clean expired or abort a Pinion upload session', [], [], [], ['abort' => 'VALUE_REQUIRED']],
 ];
 
 $outDir = dirname(__DIR__) . '/src/Command';
