@@ -28,6 +28,7 @@ use Pinoox\PinxCli\Command\FeDevCommand;
 use Pinoox\PinxCli\Command\FeInfoCommand;
 use Pinoox\PinxCli\Command\FeInstallCommand;
 use Pinoox\PinxCli\Command\FeScaffoldCommand;
+use Pinoox\PinxCli\Command\ThemeCreateCommand;
 use Pinoox\PinxCli\Command\FrontendCommand;
 use Pinoox\PinxCli\Command\GraphQLDocsCommand;
 use Pinoox\PinxCli\Command\InfoCommand;
@@ -188,6 +189,7 @@ final class ConsoleApplication extends Application
             new FeBuildCommand(),
             new FeDevCommand(),
             new FeScaffoldCommand(),
+            new ThemeCreateCommand(),
 
             // Schedule
             new ScheduleListCommand(),
