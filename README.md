@@ -419,7 +419,7 @@ Doctor runs a structured diagnostic and suggests fix commands when something fai
 | Group | Checks |
 |-------|--------|
 | **Project** | `app.php`, package identity, `platform/` layout |
-| **Runtime** | PHP version (≥ 8.1), extensions, writable paths |
+| **Runtime** | PHP version (≥ 8.2), extensions, writable paths |
 | **Dependencies** | Composer vendor, optional Node/npm |
 | **Environment** | `.env` presence and key variables |
 | **Database** | Connection (skippable with `--skip-db`) |
@@ -465,7 +465,7 @@ php packages/apply-pincore-overlay.php
 
 ## Requirements
 
-- **PHP** ≥ 8.1 with extensions required by `pinoox/pincore`
+- **PHP** ≥ 8.2 with extensions required by `pinoox/pincore`
 - **Composer** 2.x
 - **Node.js** + npm — only when using Vite/Vue/React frontends
 - **Database** — MySQL/MariaDB or whatever your `.env` configures (optional for static/Twig-only apps)

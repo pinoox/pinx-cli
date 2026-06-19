@@ -10,7 +10,7 @@ use Pinoox\PinxCli\Support\PinxVersion;
 
 final class DoctorRunner
 {
-    private const PHP_MIN = '8.1.0';
+    private const PHP_MIN = '8.2.0';
 
     /** @var array<string, string> */
     private array $env = [];
@@ -94,7 +94,7 @@ final class DoctorRunner
             label: 'PHP version',
             status: $ok ? CheckStatus::Pass : CheckStatus::Fail,
             detail: $version . ' (required ' . self::PHP_MIN . '+)',
-            hint: $ok ? null : 'Upgrade PHP to 8.1 or newer',
+            hint: $ok ? null : 'Upgrade PHP to 8.2 or newer',
         ));
 
         $memory = ini_get('memory_limit');
