@@ -37,7 +37,7 @@ final class DoctorRunner
         $this->env = $this->loadEnv($root . '/.env');
 
         $this->checkPhpRuntime($report);
-        $this->checkPhpExtensions($report);
+        $this->checkPhpExtensions($report, skipDriverExtension: $this->skipDatabase);
         $this->checkAppIdentity($report, $context);
         $this->checkProjectLayout($report, $context);
         $this->checkDependencies($report, $root);
@@ -132,7 +132,7 @@ final class DoctorRunner
         ));
     }
 
-    private function checkPhpExtensions(DoctorReport $report): void
+    private function checkPhpExtensions(DoctorReport $report, bool $skipDriverExtension = false): void
     {
         $required = [
             'mbstring' => 'Unicode string handling',
@@ -152,19 +152,21 @@ final class DoctorRunner
             ));
         }
 
-        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
-        $pdoExtension = $this->pdoExtensionForDriver($driver);
+        if (!$skipDriverExtension) {
+            $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+            $pdoExtension = $this->pdoExtensionForDriver($driver);
 
-        if ($pdoExtension !== null) {
-            $loaded = extension_loaded($pdoExtension);
-            $report->add(new CheckItem(
-                group: 'PHP',
-                id: 'ext_' . $pdoExtension,
-                label: 'ext-' . $pdoExtension,
-                status: $loaded ? CheckStatus::Pass : CheckStatus::Fail,
-                detail: 'PDO driver for DB_CONNECTION=' . $driver,
-                hint: $loaded ? null : 'Enable ext-' . $pdoExtension . ' in php.ini for the configured database driver',
-            ));
+            if ($pdoExtension !== null) {
+                $loaded = extension_loaded($pdoExtension);
+                $report->add(new CheckItem(
+                    group: 'PHP',
+                    id: 'ext_' . $pdoExtension,
+                    label: 'ext-' . $pdoExtension,
+                    status: $loaded ? CheckStatus::Pass : CheckStatus::Fail,
+                    detail: 'PDO driver for DB_CONNECTION=' . $driver,
+                    hint: $loaded ? null : 'Enable ext-' . $pdoExtension . ' in php.ini for the configured database driver',
+                ));
+            }
         }
 
         $recommended = [

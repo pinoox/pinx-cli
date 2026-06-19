@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\AppContext;
+use Pinoox\PinxCli\Support\PincoreActionCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
