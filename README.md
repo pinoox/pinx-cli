@@ -478,7 +478,6 @@ php packages/apply-pincore-overlay.php
 |---------|------|
 | [`pinoox/app`](../app) | `composer create-project` template — root app layout |
 | [`pinoox/pincore`](https://github.com/pinoox/pincore) | HMVC framework (migrations, routing, CLI engine) |
-| [`pincore-overlay`](../pincore-overlay) | Monorepo patches (`DevApp`, `pinx:build` fixes) |
 
 **Publish targets:** `composer global require pinoox/pinx-cli` · `composer create-project pinoox/app` · enable **Template repository** on `github.com/pinoox/app`.
 
