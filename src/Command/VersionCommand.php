@@ -82,7 +82,7 @@ HELP
             $io->newLine();
             $io->warning([
                 'A newer pinx release is available: ' . $status->latest,
-                'Run composer -g update pinoox/pinx-cli to upgrade.',
+                'Run composer global update pinoox/pinx-cli to upgrade.',
             ]);
         } elseif ($status->checkSucceeded && PinxVersion::isDevelopmentBuild($status->current) && $status->latest !== null) {
             $io->note('Development build detected. Latest stable release on Packagist: ' . $status->latest . '.');

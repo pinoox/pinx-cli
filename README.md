@@ -86,7 +86,7 @@ See the [pinoox/app README](../app) for the full layout and config layers.
 ```bash
 pinx -v          # quick one-line version
 pinx version     # version, install path, and update check
-composer -g update pinoox/pinx-cli # upgrade global pinx install
+composer global update pinoox/pinx-cli # upgrade global pinx install
 pinx list        # grouped command overview
 pinx help setup  # detail for one command
 ```
