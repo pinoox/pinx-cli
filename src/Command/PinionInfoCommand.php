@@ -38,6 +38,7 @@ final class PinionInfoCommand extends Command
             'pinion:info',
             ['json'],
             ['upload_id'],
+            false,
         );
     }
 }

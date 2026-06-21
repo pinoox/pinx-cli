@@ -33,13 +33,32 @@ final class DbPrefixCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return $this->forwardPincoreCommand(
-            new SymfonyStyle($input, $output),
-            $input,
-            $output,
-            'db:prefix',
-            ['use'],
-            ['package', 'prefix'],
-        );
+        $io = new SymfonyStyle($input, $output);
+        $context = $this->requireApp($io);
+
+        if ($context === null) {
+            return Command::FAILURE;
+        }
+
+        $package = trim((string) ($input->getArgument('package') ?? ''));
+        $prefix = trim((string) ($input->getArgument('prefix') ?? ''));
+
+        if ($prefix === '' && $package !== '' && $package !== $context->package && !str_starts_with($package, 'com_')) {
+            $prefix = $package;
+            $package = $context->package;
+        }
+
+        if ($package === '') {
+            $package = $context->package;
+        }
+
+        $args = ['db:prefix', $package];
+        if ($prefix !== '') {
+            $args[] = $prefix;
+        }
+
+        $args = array_merge($args, $this->forwardOptions($input, ['use']));
+
+        return $this->runPincore($context, $args, $output);
     }
 }

@@ -25,7 +25,11 @@ final class FileListCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('user', 'u', InputOption::VALUE_REQUIRED)
             ->addOption('group', null, InputOption::VALUE_REQUIRED)
+            ->addOption('access', 'a', InputOption::VALUE_REQUIRED)
+            ->addOption('ext', null, InputOption::VALUE_REQUIRED)
+            ->addOption('missing', 'm', InputOption::VALUE_NONE)
             ->addOption('json', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx file:list');
     }
@@ -37,7 +41,7 @@ final class FileListCommand extends Command
             $input,
             $output,
             'file:list',
-            ['group', 'json'],
+            ['user', 'group', 'access', 'ext', 'missing', 'json'],
             [],
         );
     }

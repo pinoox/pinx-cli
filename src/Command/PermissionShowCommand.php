@@ -25,7 +25,6 @@ final class PermissionShowCommand extends Command
     {
         $this
             ->addArgument('permission', InputArgument::REQUIRED)
-            ->addOption('roles', null, InputOption::VALUE_NONE)
             ->addOption('json', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx permission:show');
     }
@@ -37,7 +36,7 @@ final class PermissionShowCommand extends Command
             $input,
             $output,
             'permission:show',
-            ['roles', 'json'],
+            ['json'],
             ['permission'],
         );
     }

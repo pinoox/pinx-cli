@@ -28,6 +28,8 @@ final class UserRoleCommand extends Command
             ->addArgument('user', InputArgument::REQUIRED, 'User id, username, or email')
             ->addOption('role', 'r', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Role key (repeatable)')
             ->addOption('sync', null, InputOption::VALUE_NONE, 'Replace existing roles')
+            ->addOption('detach', null, InputOption::VALUE_NONE, 'Remove role(s) instead of attaching')
+            ->addOption('list', 'l', InputOption::VALUE_NONE, 'List current roles and exit')
             ->setHelp('Example: pinx user:role admin --role=admin');
     }
 
@@ -38,7 +40,7 @@ final class UserRoleCommand extends Command
             $input,
             $output,
             'user:role',
-            ['role', 'sync'],
+            ['role', 'sync', 'detach', 'list'],
         );
     }
 }

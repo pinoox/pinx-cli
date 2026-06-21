@@ -25,7 +25,7 @@ final class RoleUpdateCommand extends Command
     {
         $this
             ->addArgument('role', InputArgument::REQUIRED)
-            ->addOption('key', 'k', InputOption::VALUE_REQUIRED)
+            ->addOption('set', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
             ->addOption('name', null, InputOption::VALUE_REQUIRED)
             ->addOption('description', null, InputOption::VALUE_REQUIRED)
             ->setHelp('Example: pinx role:update');
@@ -38,7 +38,7 @@ final class RoleUpdateCommand extends Command
             $input,
             $output,
             'role:update',
-            ['key', 'name', 'description'],
+            ['set', 'name', 'description'],
             ['role'],
         );
     }

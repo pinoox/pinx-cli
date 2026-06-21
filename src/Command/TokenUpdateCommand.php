@@ -28,6 +28,7 @@ final class TokenUpdateCommand extends Command
             ->addOption('name', null, InputOption::VALUE_REQUIRED)
             ->addOption('data', null, InputOption::VALUE_REQUIRED)
             ->addOption('json', null, InputOption::VALUE_REQUIRED)
+            ->addOption('extend', null, InputOption::VALUE_NONE)
             ->addOption('lifetime', 'l', InputOption::VALUE_REQUIRED)
             ->addOption('unit', null, InputOption::VALUE_REQUIRED)
             ->setHelp('Example: pinx token:update');
@@ -40,7 +41,7 @@ final class TokenUpdateCommand extends Command
             $input,
             $output,
             'token:update',
-            ['name', 'data', 'json', 'lifetime', 'unit'],
+            ['name', 'data', 'json', 'extend', 'lifetime', 'unit'],
             ['token'],
         );
     }

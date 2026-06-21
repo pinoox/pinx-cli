@@ -36,7 +36,9 @@ final class DbCreateCommand extends Command
             ->addOption('password', null, InputOption::VALUE_REQUIRED)
             ->addOption('prefix', null, InputOption::VALUE_REQUIRED)
             ->addOption('port', null, InputOption::VALUE_REQUIRED)
+            ->addOption('timezone', null, InputOption::VALUE_REQUIRED)
             ->addOption('set', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
+            ->addOption('test', 't', InputOption::VALUE_NONE)
             ->setHelp('Example: pinx db:create');
     }
 
@@ -47,7 +49,7 @@ final class DbCreateCommand extends Command
             $input,
             $output,
             'db:create',
-            ['name', 'default', 'driver', 'use', 'host', 'database', 'username', 'password', 'prefix', 'port', 'set'],
+            ['name', 'default', 'driver', 'use', 'host', 'database', 'username', 'password', 'prefix', 'port', 'timezone', 'set', 'test'],
             ['target'],
         );
     }

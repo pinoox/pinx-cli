@@ -25,9 +25,11 @@ final class FileUpdateCommand extends Command
     {
         $this
             ->addArgument('file', InputArgument::REQUIRED)
-            ->addOption('metadata', null, InputOption::VALUE_REQUIRED)
-            ->addOption('access', null, InputOption::VALUE_REQUIRED)
+            ->addOption('group', 'g', InputOption::VALUE_REQUIRED)
+            ->addOption('access', 'a', InputOption::VALUE_REQUIRED)
             ->addOption('name', null, InputOption::VALUE_REQUIRED)
+            ->addOption('meta', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
+            ->addOption('metadata', 'm', InputOption::VALUE_REQUIRED)
             ->setHelp('Example: pinx file:update');
     }
 
@@ -38,7 +40,7 @@ final class FileUpdateCommand extends Command
             $input,
             $output,
             'file:update',
-            ['metadata', 'access', 'name'],
+            ['group', 'access', 'name', 'meta', 'metadata'],
             ['file'],
         );
     }

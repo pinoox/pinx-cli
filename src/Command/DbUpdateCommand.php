@@ -26,6 +26,7 @@ final class DbUpdateCommand extends Command
     {
         $this
             ->addArgument('target', InputArgument::OPTIONAL)
+            ->addOption('default', 'd', InputOption::VALUE_NONE)
             ->addOption('driver', null, InputOption::VALUE_REQUIRED)
             ->addOption('use', 'u', InputOption::VALUE_REQUIRED)
             ->addOption('host', null, InputOption::VALUE_REQUIRED)
@@ -34,8 +35,10 @@ final class DbUpdateCommand extends Command
             ->addOption('password', null, InputOption::VALUE_REQUIRED)
             ->addOption('prefix', null, InputOption::VALUE_REQUIRED)
             ->addOption('port', null, InputOption::VALUE_REQUIRED)
+            ->addOption('timezone', null, InputOption::VALUE_REQUIRED)
             ->addOption('reset', null, InputOption::VALUE_NONE)
             ->addOption('set', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
+            ->addOption('test', 't', InputOption::VALUE_NONE)
             ->setHelp('Example: pinx db:update');
     }
 
@@ -46,7 +49,7 @@ final class DbUpdateCommand extends Command
             $input,
             $output,
             'db:update',
-            ['driver', 'use', 'host', 'database', 'username', 'password', 'prefix', 'port', 'reset', 'set'],
+            ['default', 'driver', 'use', 'host', 'database', 'username', 'password', 'prefix', 'port', 'timezone', 'reset', 'set', 'test'],
             ['target'],
         );
     }

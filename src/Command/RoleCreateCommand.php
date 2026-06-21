@@ -28,6 +28,7 @@ final class RoleCreateCommand extends Command
             ->addOption('key', 'k', InputOption::VALUE_REQUIRED)
             ->addOption('name', null, InputOption::VALUE_REQUIRED)
             ->addOption('description', null, InputOption::VALUE_REQUIRED)
+            ->addOption('permission', 'p', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
             ->setHelp('Example: pinx role:create');
     }
 
@@ -38,7 +39,7 @@ final class RoleCreateCommand extends Command
             $input,
             $output,
             'role:create',
-            ['key', 'name', 'description'],
+            ['key', 'name', 'description', 'permission'],
             [],
         );
     }

@@ -25,6 +25,8 @@ final class RoleListCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('permissions', 'p', InputOption::VALUE_NONE)
+            ->addOption('users', 'u', InputOption::VALUE_NONE)
             ->addOption('json', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx role:list');
     }
@@ -36,7 +38,7 @@ final class RoleListCommand extends Command
             $input,
             $output,
             'role:list',
-            ['json'],
+            ['permissions', 'users', 'json'],
             [],
         );
     }

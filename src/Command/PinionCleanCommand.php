@@ -36,6 +36,7 @@ final class PinionCleanCommand extends Command
             'pinion:clean',
             ['abort'],
             [],
+            false,
         );
     }
 }

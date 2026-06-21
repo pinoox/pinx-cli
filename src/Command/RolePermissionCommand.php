@@ -26,11 +26,10 @@ final class RolePermissionCommand extends Command
     {
         $this
             ->addArgument('role', InputArgument::REQUIRED)
-            ->addOption('attach', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
-            ->addOption('detach', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
+            ->addOption('permission', 'p', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)
             ->addOption('sync', null, InputOption::VALUE_NONE)
-            ->addOption('force', null, InputOption::VALUE_NONE)
-            ->setHelp('Example: pinx role:permission');
+            ->addOption('detach', null, InputOption::VALUE_NONE)
+            ->setHelp('Example: pinx role:permission admin --permission=posts.edit');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -40,7 +39,7 @@ final class RolePermissionCommand extends Command
             $input,
             $output,
             'role:permission',
-            ['attach', 'detach', 'sync', 'force'],
+            ['permission', 'sync', 'detach'],
             ['role'],
         );
     }

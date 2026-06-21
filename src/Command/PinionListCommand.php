@@ -37,6 +37,7 @@ final class PinionListCommand extends Command
             'pinion:list',
             ['status', 'json'],
             [],
+            false,
         );
     }
 }

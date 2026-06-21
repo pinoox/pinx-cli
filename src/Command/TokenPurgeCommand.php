@@ -26,7 +26,6 @@ final class TokenPurgeCommand extends Command
     {
         $this
             ->addOption('force', null, InputOption::VALUE_NONE)
-            ->addOption('json', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx token:purge');
     }
 
@@ -37,7 +36,7 @@ final class TokenPurgeCommand extends Command
             $input,
             $output,
             'token:purge',
-            ['force', 'json'],
+            ['force'],
             [],
         );
     }

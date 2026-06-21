@@ -24,6 +24,7 @@ trait ForwardsPincoreCommand
         string $pincoreCommand,
         array $optionNames = [],
         array $argumentNames = [],
+        bool $appendPackage = true,
     ): int {
         $context = $this->requireApp($io);
 
@@ -32,6 +33,7 @@ trait ForwardsPincoreCommand
         }
 
         $args = [$pincoreCommand];
+        $hasPackageTarget = false;
 
         foreach ($argumentNames as $name) {
             if (!$input->hasArgument($name)) {
@@ -44,7 +46,15 @@ trait ForwardsPincoreCommand
                 continue;
             }
 
+            if ($name === 'package' || $name === 'target') {
+                $hasPackageTarget = true;
+            }
+
             $args[] = is_scalar($value) ? (string) $value : '';
+        }
+
+        if ($appendPackage && !$hasPackageTarget) {
+            $args[] = $context->package;
         }
 
         $args = array_merge($args, $this->forwardOptions($input, $optionNames));

@@ -25,7 +25,6 @@ final class RoleShowCommand extends Command
     {
         $this
             ->addArgument('role', InputArgument::REQUIRED)
-            ->addOption('permissions', null, InputOption::VALUE_NONE)
             ->addOption('json', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx role:show');
     }
@@ -37,7 +36,7 @@ final class RoleShowCommand extends Command
             $input,
             $output,
             'role:show',
-            ['permissions', 'json'],
+            ['json'],
             ['role'],
         );
     }

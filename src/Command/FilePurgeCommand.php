@@ -25,8 +25,10 @@ final class FilePurgeCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('missing', 'm', InputOption::VALUE_NONE)
             ->addOption('group', null, InputOption::VALUE_REQUIRED)
-            ->addOption('older-than', null, InputOption::VALUE_REQUIRED)
+            ->addOption('db-only', null, InputOption::VALUE_NONE)
+            ->addOption('storage-only', null, InputOption::VALUE_NONE)
             ->addOption('force', null, InputOption::VALUE_NONE)
             ->setHelp('Example: pinx file:purge');
     }
@@ -38,7 +40,7 @@ final class FilePurgeCommand extends Command
             $input,
             $output,
             'file:purge',
-            ['group', 'older-than', 'force'],
+            ['missing', 'group', 'db-only', 'storage-only', 'force'],
             [],
         );
     }
