@@ -86,7 +86,7 @@ See the [pinoox/app README](../app) for the full layout and config layers.
 ```bash
 pinx -v          # quick one-line version
 pinx version     # version, install path, and update check
-pinx self-update # upgrade global or project pinx install
+composer -g update pinoox/pinx-cli # upgrade global pinx install
 pinx list        # grouped command overview
 pinx help setup  # detail for one command
 ```
@@ -408,7 +408,6 @@ Legacy `frontend` / `fe` accept `info`, `install`, `build`, `dev`, `scaffold` as
 |---------|---------|-------------|
 | `list` | — | Grouped command overview |
 | `version` | `ver` | CLI version, install mode, and Packagist update check |
-| `self-update` | `self:up` | Update pinx to the latest Packagist release via Composer |
 
 ---
 

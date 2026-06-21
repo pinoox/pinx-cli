@@ -68,7 +68,6 @@ use Pinoox\PinxCli\Command\RouteActionsCommand;
 use Pinoox\PinxCli\Command\ScheduleListCommand;
 use Pinoox\PinxCli\Command\ScheduleRunCommand;
 use Pinoox\PinxCli\Command\SeederRunCommand;
-use Pinoox\PinxCli\Command\SelfUpdateCommand;
 use Pinoox\PinxCli\Command\SetupCommand;
 use Pinoox\PinxCli\Command\TestCommand;
 use Pinoox\PinxCli\Command\TokenCreateCommand;
@@ -210,7 +209,6 @@ final class ConsoleApplication extends Application
 
             // Meta
             new VersionCommand(),
-            new SelfUpdateCommand(),
             new ListCommand(),
         ] as $command) {
             $this->registerCommand($command);
