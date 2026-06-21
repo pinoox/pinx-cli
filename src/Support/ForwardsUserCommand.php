@@ -41,6 +41,8 @@ trait ForwardsUserCommand
             }
         }
 
+        $args[] = $context->package;
+
         $args = array_merge($args, $this->forwardOptions($input, $optionNames));
 
         return $this->runPincore($context, $args, $output);

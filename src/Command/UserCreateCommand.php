@@ -10,6 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
@@ -38,12 +39,39 @@ final class UserCreateCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
+        $this->promptMissingCredentials($input, $io);
+
         return $this->forwardUserCommand(
-            new SymfonyStyle($input, $output),
+            $io,
             $input,
             $output,
             'user:create',
             ['username', 'password', 'email', 'fname', 'lname', 'mobile', 'group-key', 'status', 'role'],
         );
+    }
+
+    private function promptMissingCredentials(InputInterface $input, SymfonyStyle $io): void
+    {
+        if (!$input->isInteractive()) {
+            return;
+        }
+
+        if ((string) ($input->getOption('username') ?? '') === '') {
+            $username = (string) $io->ask('Username');
+            if ($username !== '') {
+                $input->setOption('username', $username);
+            }
+        }
+
+        if ((string) ($input->getOption('password') ?? '') === '') {
+            $question = new Question('Password');
+            $question->setHidden(true);
+            $question->setHiddenFallback(false);
+            $password = (string) $io->askQuestion($question);
+            if ($password !== '') {
+                $input->setOption('password', $password);
+            }
+        }
     }
 }

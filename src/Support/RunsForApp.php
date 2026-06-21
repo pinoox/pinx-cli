@@ -52,7 +52,7 @@ trait RunsForApp
 
             $value = $input->getOption($name);
 
-            if ($value === false || $value === null) {
+            if ($value === false || $value === null || $value === '') {
                 continue;
             }
 
