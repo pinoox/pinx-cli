@@ -29,12 +29,25 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 | `composer global require` | Installs the `pinx` command on your machine |
 | `pinx new my-shop` | Scaffolds from `pinoox/app`; wizard suggests a 3-part package (e.g. `com_my_shop`) |
 | `.env` | Minimal by default: `APP_ENV=development` and `DB_CONNECTION=devdb`; use `.env.example` as the full reference |
+| `pinx sync` | Adds missing single-app support files to the current folder |
+| `pinx repair` | Repairs a folder so it can run as a Pinx single-app project |
 | `pinx migrate` | Runs app migrations; DevDB is used automatically for local development unless you configure another database |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
 
 Package names follow `com_{vendor}_{name}` — e.g. `com_acme_shop`, `ir_yekdo_app`. Already inside an empty folder? Use `pinx init` instead of `pinx new`.
 
 **Optional check:** `pinx doctor` reports PHP, layout, env, DB, and build readiness.
+
+To turn an existing app folder into the single-app layout:
+
+```bash
+cd existing-app
+pinx repair --package=com_vendor_app
+pinx migrate
+pinx dev
+```
+
+Use `pinx sync` when you only want to add missing template support files. Use `pinx sync --force` or `pinx repair --force` only when you intentionally want template-managed support files overwritten.
 
 ---
 

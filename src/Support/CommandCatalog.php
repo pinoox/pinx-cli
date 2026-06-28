@@ -116,6 +116,8 @@ final class CommandCatalog
         return [
             'new' => 'project',
             'init' => 'project',
+            'sync' => 'project',
+            'repair' => 'project',
             'setup' => 'project',
             'doctor' => 'project',
             'info' => 'project',

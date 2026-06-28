@@ -121,6 +121,44 @@ final class ProjectScaffolder
 
     /**
      * @param array<string, string> $replacements
+     * @return list<string>
+     */
+    public function syncInPlace(
+        string $projectRoot,
+        array $replacements,
+        bool $overwrite = false,
+        ?OutputInterface $output = null,
+    ): array {
+        $source = TemplatePath::resolve($output);
+        $projectRoot = ProjectRoot::normalize($projectRoot);
+        $changed = [];
+
+        foreach ($this->syncFiles() as $relative) {
+            $from = $source . '/' . $relative;
+            $to = $projectRoot . '/' . $relative;
+
+            if (!is_file($from)) {
+                continue;
+            }
+
+            if (is_file($to) && !$overwrite) {
+                continue;
+            }
+
+            $this->copyFile($from, $to, $replacements);
+            $changed[] = $relative;
+        }
+
+        if (!is_file($projectRoot . '/.env')) {
+            $this->ensureMinimalEnv($projectRoot);
+            $changed[] = '.env';
+        }
+
+        return $changed;
+    }
+
+    /**
+     * @param array<string, string> $replacements
      */
     private function copyDirectory(string $source, string $target, array $replacements): void
     {
@@ -204,6 +242,34 @@ final class ProjectScaffolder
         }
 
         file_put_contents($envPath, "APP_ENV=development\nDB_CONNECTION=devdb\n");
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function syncFiles(): array
+    {
+        return [
+            '.env.example',
+            '.gitignore',
+            '.htaccess',
+            'app.php',
+            'bin/pinx',
+            'composer.json',
+            'config/app.config.php',
+            'index.php',
+            'platform/app-router.config.php',
+            'platform/apps.config.php',
+            'platform/domain.config.php',
+            'platform/launcher/bootstrap.php',
+            'platform/launcher/server.php',
+            'platform/pinoox.config.php',
+            'resource/.gitkeep',
+            'resource/icon.png',
+            'routes/actions.php',
+            'routes/web.php',
+            'schedule.php',
+        ];
     }
 
     private function shouldSkipSkeletonPath(string $relative): bool

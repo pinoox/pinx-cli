@@ -63,6 +63,7 @@ use Pinoox\PinxCli\Command\PinkerOverridesCommand;
 use Pinoox\PinxCli\Command\PinkerRebuildCommand;
 use Pinoox\PinxCli\Command\PinkerStatusCommand;
 use Pinoox\PinxCli\Command\ReleaseCommand;
+use Pinoox\PinxCli\Command\RepairCommand;
 use Pinoox\PinxCli\Command\RoleCreateCommand;
 use Pinoox\PinxCli\Command\RoleDeleteCommand;
 use Pinoox\PinxCli\Command\RoleListCommand;
@@ -74,6 +75,7 @@ use Pinoox\PinxCli\Command\ScheduleListCommand;
 use Pinoox\PinxCli\Command\ScheduleRunCommand;
 use Pinoox\PinxCli\Command\SeederRunCommand;
 use Pinoox\PinxCli\Command\SetupCommand;
+use Pinoox\PinxCli\Command\SyncCommand;
 use Pinoox\PinxCli\Command\TestCommand;
 use Pinoox\PinxCli\Command\TokenCreateCommand;
 use Pinoox\PinxCli\Command\TokenDeleteCommand;
@@ -107,6 +109,8 @@ final class ConsoleApplication extends Application
             // Project
             new NewCommand(),
             new InitCommand(),
+            new SyncCommand(),
+            new RepairCommand(),
             new SetupCommand(),
             new DoctorCommand(),
             new InfoCommand(),
