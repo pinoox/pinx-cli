@@ -47,6 +47,31 @@ try {
         return;
     }
 
+    if ($path === '/api/health') {
+        json_response(health_payload($root));
+        return;
+    }
+
+    if ($path === '/api/migrations') {
+        json_response(command_payload($root, 'migrate_status'));
+        return;
+    }
+
+    if ($path === '/api/routes') {
+        json_response(command_payload($root, 'routes'));
+        return;
+    }
+
+    if ($path === '/api/logs') {
+        json_response(logs_payload($root));
+        return;
+    }
+
+    if ($path === '/api/recommendations') {
+        json_response(recommendations_payload($root));
+        return;
+    }
+
     if ($path === '/api/cli/actions') {
         json_response(['actions' => cli_actions()]);
         return;
@@ -710,6 +735,131 @@ function run_cli_action(string $root, string $action): array
     ];
 }
 
+function command_payload(string $root, string $action): array
+{
+    $result = run_cli_action($root, $action);
+
+    return [
+        'ok' => $result['ok'],
+        'exit_code' => $result['exit_code'],
+        'output' => trim((string) $result['stdout']),
+        'error' => trim((string) $result['stderr']),
+        'json' => $result['json'],
+    ];
+}
+
+function health_payload(string $root): array
+{
+    $result = run_cli_action($root, 'doctor');
+    $json = is_array($result['json']) ? $result['json'] : [];
+    $summary = is_array($json['summary'] ?? null) ? $json['summary'] : [];
+    $checks = is_array($json['checks'] ?? null) ? $json['checks'] : [];
+    $blocking = array_values(array_filter($checks, static fn (array $check): bool => ($check['status'] ?? '') === 'fail'));
+    $warnings = array_values(array_filter($checks, static fn (array $check): bool => ($check['status'] ?? '') === 'warn'));
+
+    return [
+        'ok' => (bool) ($json['healthy'] ?? $result['ok']),
+        'score' => (int) ($json['score'] ?? 0),
+        'summary' => $summary,
+        'blocking' => array_slice($blocking, 0, 8),
+        'warnings' => array_slice($warnings, 0, 8),
+        'raw' => $json,
+    ];
+}
+
+function logs_payload(string $root): array
+{
+    $logDir = $root . '/storage/logs';
+    $files = [];
+
+    if (is_dir($logDir)) {
+        foreach (glob($logDir . '/*.log') ?: [] as $file) {
+            $files[] = [
+                'name' => basename($file),
+                'size' => filesize($file) ?: 0,
+                'modified_at' => date(DATE_ATOM, filemtime($file) ?: time()),
+                'tail' => tail_file($file, 80),
+            ];
+        }
+    }
+
+    usort($files, static fn (array $a, array $b): int => strcmp((string) $b['modified_at'], (string) $a['modified_at']));
+
+    return [
+        'files' => $files,
+    ];
+}
+
+function tail_file(string $file, int $lines): string
+{
+    $content = file_get_contents($file);
+    if (!is_string($content) || $content === '') {
+        return '';
+    }
+
+    $parts = preg_split('/\R/', $content) ?: [];
+
+    return implode("\n", array_slice($parts, -$lines));
+}
+
+function recommendations_payload(string $root): array
+{
+    $summary = summary_payload($root);
+    $tables = tables_payload($root)['tables'] ?? [];
+    $health = health_payload($root);
+    $items = [];
+
+    if ((int) ($summary['database']['table_count'] ?? 0) === 0) {
+        $items[] = [
+            'tone' => 'info',
+            'title' => 'Run migrations',
+            'body' => 'No database tables were found. Run migrations to build the schema.',
+            'action' => 'migrate',
+        ];
+    }
+
+    if (!$health['ok']) {
+        $items[] = [
+            'tone' => 'danger',
+            'title' => 'Fix blocking health checks',
+            'body' => count($health['blocking']) . ' blocking issue(s) need attention before the app is fully ready.',
+            'action' => 'health',
+        ];
+    } elseif (($health['summary']['warn'] ?? 0) > 0) {
+        $items[] = [
+            'tone' => 'warn',
+            'title' => 'Review warnings',
+            'body' => (string) ($health['summary']['warn'] ?? 0) . ' warning(s) were found. They are not blocking local development.',
+            'action' => 'health',
+        ];
+    }
+
+    foreach ($tables as $table) {
+        if ((int) ($table['rows'] ?? 0) > 1000) {
+            $items[] = [
+                'tone' => 'info',
+                'title' => 'Large table: ' . $table['name'],
+                'body' => 'Use search and pagination when inspecting this table.',
+                'action' => 'database',
+            ];
+            break;
+        }
+    }
+
+    if ($items === []) {
+        $items[] = [
+            'tone' => 'success',
+            'title' => 'Ready for development',
+            'body' => 'Your app looks healthy. Studio will keep monitoring schema, rows, logs, and routes.',
+            'action' => 'dashboard',
+        ];
+    }
+
+    return [
+        'items' => $items,
+    ];
+}
+
 function json_response(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -768,10 +918,13 @@ function studio_html(): string
         </div>
       </div>
       <nav class="space-y-2">
-        <button data-view="dashboard" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Dashboard</button>
-        <button data-view="database" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Database</button>
-        <button data-view="cli" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">CLI Actions</button>
-        <button data-view="export" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Export</button>
+        <button data-view="dashboard" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Overview</button>
+        <button data-view="database" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Database Explorer</button>
+        <button data-view="health" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Health Center</button>
+        <button data-view="migrations" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Migrations</button>
+        <button data-view="routes" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Routes</button>
+        <button data-view="logs" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Logs</button>
+        <button data-view="export" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Snapshots</button>
       </nav>
       <div class="mt-6 rounded-2xl border border-white/10 bg-white/[.04] p-4">
         <div class="text-xs uppercase tracking-wider text-slate-500">Active app</div>
@@ -787,7 +940,7 @@ function studio_html(): string
       <header class="mb-6 flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
         <div>
           <h1 id="viewTitle" class="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p class="mt-1 text-sm text-slate-400">Inspect local data, run safe Pinx actions, and keep development moving.</p>
+          <p class="mt-1 text-sm text-slate-400">A smart local dashboard for schema, health, routes, logs, and development flow.</p>
         </div>
         <div class="flex gap-2">
           <button id="refresh" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15">Refresh</button>
@@ -796,6 +949,7 @@ function studio_html(): string
       </header>
       <section id="dashboardView" class="view space-y-6">
         <div id="overview" class="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1"></div>
+        <div id="recommendations" class="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1"></div>
         <div class="grid grid-cols-[minmax(220px,320px)_1fr] gap-4 max-xl:grid-cols-1">
           <div class="rounded-3xl border border-white/10 bg-white/[.04] p-4">
             <div class="mb-3 flex items-center justify-between">
@@ -813,9 +967,18 @@ function studio_html(): string
           <div id="databaseContent" class="rounded-3xl border border-white/10 bg-white/[.04] p-6 text-slate-400">Select a table.</div>
         </div>
       </section>
-      <section id="cliView" class="view hidden space-y-4">
-        <div id="actions" class="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1"></div>
-        <pre id="cliOutput" class="min-h-72 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
+      <section id="healthView" class="view hidden space-y-4">
+        <div id="healthSummary" class="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1"></div>
+        <div id="healthContent" class="grid grid-cols-2 gap-4 max-xl:grid-cols-1"></div>
+      </section>
+      <section id="migrationsView" class="view hidden">
+        <pre id="migrationsOutput" class="min-h-96 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
+      </section>
+      <section id="routesView" class="view hidden">
+        <pre id="routesOutput" class="min-h-96 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
+      </section>
+      <section id="logsView" class="view hidden">
+        <div id="logsContent" class="grid gap-4"></div>
       </section>
       <section id="exportView" class="view hidden">
         <pre id="exportOutput" class="min-h-96 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
@@ -843,7 +1006,11 @@ function studio_html(): string
         ${metric('Rows', summary.stats.rows, 'loaded')}
       `;
       await loadTables();
-      await loadActions();
+      await loadRecommendations();
+      await loadHealth();
+      await loadMigrations();
+      await loadRoutes();
+      await loadLogs();
     }
 
     function metric(label, value, note) {
@@ -918,21 +1085,51 @@ function studio_html(): string
       URL.revokeObjectURL(a.href);
     };
 
-    async function loadActions() {
-      const payload = await api('/api/cli/actions');
-      $('actions').innerHTML = (payload.actions || []).map(action => `
-        <button class="rounded-3xl border border-white/10 bg-white/[.04] p-4 text-left transition hover:border-teal-300/50 hover:bg-teal-300/10" onclick="runAction('${esc(action.id)}')">
-          <div class="font-bold">${esc(action.label)}</div>
-          <div class="mt-1 text-sm text-slate-400">${esc(action.description)}</div>
-          <code class="mt-3 block rounded-xl bg-black/30 px-3 py-2 text-xs text-teal-200">${esc(action.command)}</code>
-        </button>
-      `).join('');
+    async function loadRecommendations() {
+      const payload = await api('/api/recommendations');
+      $('recommendations').innerHTML = (payload.items || []).map(item => {
+        const colors = item.tone === 'danger' ? 'border-rose-400/30 bg-rose-400/10 text-rose-100' : item.tone === 'warn' ? 'border-amber-300/30 bg-amber-300/10 text-amber-100' : item.tone === 'success' ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-100' : 'border-blue-300/30 bg-blue-300/10 text-blue-100';
+        return `<button class="rounded-3xl border p-4 text-left transition hover:scale-[1.01] ${colors}" onclick="switchView('${esc(item.action || 'dashboard')}')"><div class="font-bold">${esc(item.title)}</div><div class="mt-1 text-sm opacity-80">${esc(item.body)}</div></button>`;
+      }).join('');
     }
 
-    async function runAction(action) {
-      $('cliOutput').textContent = 'Running ' + action + '...';
-      const payload = await post('/api/cli/run', { action });
-      $('cliOutput').textContent = (payload.stdout || '') + (payload.stderr ? '\n[stderr]\n' + payload.stderr : '') || JSON.stringify(payload, null, 2);
+    async function loadHealth() {
+      const payload = await api('/api/health');
+      $('healthSummary').innerHTML = `
+        ${metric('Score', payload.score || 0, payload.ok ? 'healthy' : 'needs attention')}
+        ${metric('Pass', payload.summary?.pass || 0, 'checks')}
+        ${metric('Warnings', payload.summary?.warn || 0, 'review')}
+        ${metric('Failures', payload.summary?.fail || 0, 'blocking')}
+      `;
+      $('healthContent').innerHTML = healthPanel('Blocking issues', payload.blocking || [], 'rose') + healthPanel('Warnings', payload.warnings || [], 'amber');
+    }
+
+    function healthPanel(title, items, tone) {
+      const color = tone === 'rose' ? 'border-rose-400/20 bg-rose-400/10' : 'border-amber-300/20 bg-amber-300/10';
+      const rows = items.length ? items.map(item => `<div class="rounded-2xl border border-white/10 bg-black/20 p-3"><div class="font-semibold">${esc(item.label || item.id)}</div><div class="mt-1 text-sm text-slate-400">${esc(item.detail || '')}</div><div class="mt-1 text-xs text-slate-500">${esc(item.hint || '')}</div></div>`).join('') : '<div class="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-slate-400">Nothing to show.</div>';
+      return `<div class="rounded-3xl border ${color} p-4"><h2 class="mb-3 font-bold">${esc(title)}</h2><div class="space-y-3">${rows}</div></div>`;
+    }
+
+    async function loadMigrations() {
+      const payload = await api('/api/migrations');
+      $('migrationsOutput').textContent = payload.output || payload.error || 'No migration output.';
+    }
+
+    async function loadRoutes() {
+      const payload = await api('/api/routes');
+      $('routesOutput').textContent = payload.output || payload.error || 'No route output.';
+    }
+
+    async function loadLogs() {
+      const payload = await api('/api/logs');
+      $('logsContent').innerHTML = (payload.files || []).length ? payload.files.map(file => `
+        <article class="overflow-hidden rounded-3xl border border-white/10 bg-white/[.04]">
+          <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <div><strong>${esc(file.name)}</strong><div class="text-xs text-slate-500">${esc(file.modified_at)} · ${esc(file.size)} bytes</div></div>
+          </div>
+          <pre class="max-h-96 overflow-auto bg-black/35 p-4 text-xs leading-relaxed text-slate-300">${esc(file.tail || '')}</pre>
+        </article>
+      `).join('') : '<div class="rounded-3xl border border-dashed border-white/10 p-8 text-center text-slate-500">No log files yet.</div>';
     }
 
     function switchView(view) {
@@ -946,7 +1143,7 @@ function studio_html(): string
     $('refresh').onclick = () => { loadTables(); if (state.selected) loadTable(); };
     boot().then(() => {
       const initial = (location.hash || '#dashboard').slice(1);
-      switchView(['dashboard', 'database', 'cli', 'export'].includes(initial) ? initial : 'dashboard');
+      switchView(['dashboard', 'database', 'health', 'migrations', 'routes', 'logs', 'export'].includes(initial) ? initial : 'dashboard');
     }).catch(error => { $('content').innerHTML = '<div class="rounded-3xl border border-rose-400/20 bg-rose-400/10 p-6 text-rose-200">' + esc(error.message) + '</div>'; });
   </script>
 </body>
