@@ -27,8 +27,7 @@ final class DevCommand extends Command
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Server host')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Server port')
             ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'Skip Vite/npm dev')
-            ->addOption('studio', null, InputOption::VALUE_NONE, 'Start Pinx Studio beside the dev server')
-            ->addOption('studio-port', null, InputOption::VALUE_REQUIRED, 'Pinx Studio port', '8010')
+            ->addOption('no-studio', null, InputOption::VALUE_NONE, 'Disable Pinx Studio on /~studio')
             ->addOption('open-studio', null, InputOption::VALUE_NONE, 'Open Pinx Studio in the browser')
             ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start');
     }
@@ -50,15 +49,19 @@ final class DevCommand extends Command
         $host = (string) ($input->getOption('host') ?: getenv('SERVER_HOST') ?: '127.0.0.1');
         $port = (string) ($input->getOption('port') ?: getenv('SERVER_PORT') ?: '8000');
         $stack = $this->frontendStack($root);
-        $studioProcess = null;
+        $extraEnv = [];
+        $studioUrl = 'http://' . $host . ':' . $port . '/~studio';
 
-        if ($input->getOption('studio')) {
+        if (!$input->getOption('no-studio')) {
             try {
                 $studio = new StudioServer();
-                $studioPort = $studio->findPort('127.0.0.1', (int) $input->getOption('studio-port'));
-                $studioUrl = $studio->url('127.0.0.1', $studioPort);
-                $studioProcess = $studio->process($root, '127.0.0.1', $studioPort);
-                $studioProcess->start();
+                $extraEnv = [
+                    'PINX_STUDIO_ENABLED' => '1',
+                    'PINX_STUDIO_ROUTE' => '/~studio',
+                    'PINX_STUDIO_ROUTER' => $studio->router(),
+                    'PINX_STUDIO_WIDGET' => '1',
+                    'PINX_STUDIO_PROJECT_ROOT' => $root,
+                ];
                 $io->note('Pinx Studio: ' . $studioUrl);
 
                 if ($input->getOption('open-studio')) {
@@ -77,7 +80,7 @@ final class DevCommand extends Command
 
             $io->note('Starting Vite + PHP server for ' . $package);
 
-            return $this->runDevServer($runner, $args, $output, $studioProcess);
+            return $runner->run($args, $output, $extraEnv);
         }
 
         $args = ['serve', '--app=' . $package, '--host=' . $host, '--port=' . $port];
@@ -87,21 +90,7 @@ final class DevCommand extends Command
 
         $io->note('Starting PHP server for ' . $package . ' at http://' . $host . ':' . $port);
 
-        return $this->runDevServer($runner, $args, $output, $studioProcess);
-    }
-
-    /**
-     * @param list<string> $args
-     */
-    private function runDevServer(PincoreRunner $runner, array $args, OutputInterface $output, ?\Symfony\Component\Process\Process $studioProcess): int
-    {
-        try {
-            return $runner->run($args, $output);
-        } finally {
-            if ($studioProcess !== null && $studioProcess->isRunning()) {
-                $studioProcess->stop(1);
-            }
-        }
+        return $runner->run($args, $output, $extraEnv);
     }
 
     private function frontendStack(string $root): ?string
