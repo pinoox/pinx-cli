@@ -144,6 +144,11 @@ final class CommandCatalog
             'database:update' => 'database',
             'db:prefix' => 'database',
             'database:prefix' => 'database',
+            'devdb:status' => 'database',
+            'devdb:clear' => 'database',
+            'devdb:export' => 'database',
+            'devdb:inspect' => 'database',
+            'devdb:seed' => 'database',
 
             'patch' => 'patches',
             'patch:run' => 'patches',
@@ -295,6 +300,9 @@ final class CommandCatalog
             'db:create' => ['database:create', 'make:db'],
             'db:update' => ['database:update'],
             'db:prefix' => ['database:prefix'],
+            'devdb:status' => ['devdb:st'],
+            'devdb:clear' => ['devdb:cl'],
+            'devdb:inspect' => ['devdb:show'],
 
             // Build & release
             'build' => ['bld'],

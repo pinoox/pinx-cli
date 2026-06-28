@@ -154,7 +154,9 @@ final class DoctorRunner
 
         if (!$skipDriverExtension) {
             $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
-            $pdoExtension = $this->pdoExtensionForDriver($driver);
+            $pdoExtension = in_array($driver, ['auto', 'devdb'], true)
+                ? null
+                : $this->pdoExtensionForDriver($driver);
 
             if ($pdoExtension !== null) {
                 $loaded = extension_loaded($pdoExtension);
@@ -625,6 +627,19 @@ final class DoctorRunner
     private function checkDatabase(DoctorReport $report): void
     {
         $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+
+        if ($driver === 'devdb') {
+            $this->checkDevDb($report, explicit: true);
+
+            return;
+        }
+
+        if ($driver === 'auto') {
+            $this->checkAutoDatabase($report);
+
+            return;
+        }
+
         $pdoExtension = $this->pdoExtensionForDriver($driver);
 
         if ($pdoExtension === null) {
@@ -660,6 +675,81 @@ final class DoctorRunner
         }
 
         $this->checkPdoDatabase($report, $driver);
+    }
+
+    private function checkAutoDatabase(DoctorReport $report): void
+    {
+        $realDriver = strtolower($this->env['DB_DRIVER'] ?? 'mysql');
+        $extension = $this->pdoExtensionForDriver($realDriver);
+
+        if ($extension !== null && extension_loaded('pdo') && extension_loaded($extension)) {
+            $host = $this->env['DB_HOST'] ?? '';
+            $port = (int) ($this->env['DB_PORT'] ?? match ($realDriver) {
+                'pgsql' => 5432,
+                'sqlsrv' => 1433,
+                default => 3306,
+            });
+            $database = $this->env['DB_DATABASE'] ?? '';
+            $username = $this->env['DB_USERNAME'] ?? '';
+            $password = $this->env['DB_PASSWORD'] ?? '';
+            $dsn = $this->pdoDsnForDriver($realDriver, $host, $port, $database);
+
+            if ($host !== '' && $database !== '' && $username !== '' && $dsn !== null) {
+                try {
+                    $pdo = new \PDO($dsn, $username, $password, [
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                    ]);
+                    $pdo->query('SELECT 1');
+                    $report->add(new CheckItem(
+                        group: 'Database',
+                        id: 'db_auto',
+                        label: 'DB_CONNECTION=auto',
+                        status: CheckStatus::Pass,
+                        detail: 'Using real database: ' . $realDriver,
+                    ));
+
+                    return;
+                } catch (\PDOException) {
+                }
+            }
+        }
+
+        $sqlite = $this->env['DB_DATABASE'] ?? '';
+        if ($sqlite !== '' && is_file($sqlite) && extension_loaded('pdo_sqlite')) {
+            $report->add(new CheckItem(
+                group: 'Database',
+                id: 'db_auto',
+                label: 'DB_CONNECTION=auto',
+                status: CheckStatus::Pass,
+                detail: 'Using SQLite: ' . $sqlite,
+            ));
+
+            return;
+        }
+
+        $this->checkDevDb($report, explicit: false);
+    }
+
+    private function checkDevDb(DoctorReport $report, bool $explicit): void
+    {
+        $appEnv = strtolower($this->env['APP_ENV'] ?? 'production');
+        $local = in_array($appEnv, ['local', 'development', 'dev'], true);
+        $path = $this->env['DEVDB_PATH'] ?? 'storage/devdb';
+        $engine = strtolower($this->env['DEVDB_ENGINE'] ?? 'auto');
+        $runtimeEngine = $engine !== 'json' && extension_loaded('pdo_sqlite') ? 'SQLite' : 'JSON';
+
+        $report->add(new CheckItem(
+            group: 'Database',
+            id: 'db_devdb',
+            label: $explicit ? 'Pinoox DevDB' : 'Auto fallback',
+            status: $local ? CheckStatus::Warn : CheckStatus::Fail,
+            detail: $local
+                ? 'Dev-only ' . $runtimeEngine . ' database at ' . $path
+                : 'DevDB is disabled unless APP_ENV=local',
+            hint: $local
+                ? 'Use MySQL/PostgreSQL or a production SQLite database before deployment'
+                : 'Set APP_ENV=local for DevDB or configure a real database',
+        ));
     }
 
     private function checkSqliteDatabase(DoctorReport $report): void

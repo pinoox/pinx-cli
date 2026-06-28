@@ -16,6 +16,11 @@ use Pinoox\PinxCli\Command\DepsCommand;
 use Pinoox\PinxCli\Command\DepsInstallCommand;
 use Pinoox\PinxCli\Command\DepsStatusCommand;
 use Pinoox\PinxCli\Command\DepsUpdateCommand;
+use Pinoox\PinxCli\Command\DevDbClearCommand;
+use Pinoox\PinxCli\Command\DevDbExportCommand;
+use Pinoox\PinxCli\Command\DevDbInspectCommand;
+use Pinoox\PinxCli\Command\DevDbSeedCommand;
+use Pinoox\PinxCli\Command\DevDbStatusCommand;
 use Pinoox\PinxCli\Command\DevCommand;
 use Pinoox\PinxCli\Command\DoctorCommand;
 use Pinoox\PinxCli\Command\FileDeleteCommand;
@@ -122,6 +127,11 @@ final class ConsoleApplication extends Application
             new DbCreateCommand(),
             new DbUpdateCommand(),
             new DbPrefixCommand(),
+            new DevDbStatusCommand(),
+            new DevDbClearCommand(),
+            new DevDbExportCommand(),
+            new DevDbInspectCommand(),
+            new DevDbSeedCommand(),
             new PatchRunCommand(),
             new PatchStatusCommand(),
             new PatchRollbackCommand(),

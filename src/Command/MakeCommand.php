@@ -31,6 +31,7 @@ final class MakeCommand extends Command
         'portal',
         'form-request',
         'seeder',
+        'factory',
         'test',
     ];
 
@@ -55,6 +56,7 @@ Examples:
   pinx make portal ShopService
   pinx make form-request StoreProductRequest
   pinx make seeder DemoSeeder
+  pinx make factory ProductFactory
   pinx make test ProductTest --feature
 HELP
             );
@@ -98,6 +100,7 @@ HELP
             'portal' => $this->portalArgs($context, $name, $input),
             'form-request' => ['form-request:create', $name, $context->package],
             'seeder' => ['seeder:create', $name, $context->package],
+            'factory' => ['factory:create', $name, $context->package],
             'test' => $this->testArgs($context, $name, $input),
         };
     }
@@ -138,6 +141,7 @@ HELP
             'portal' => $name,
             'form-request' => $this->stripSuffix($name, 'Request'),
             'seeder' => $this->stripSuffix($name, 'Seeder'),
+            'factory' => $this->stripSuffix($name, 'Factory'),
             'test' => $this->stripSuffix($name, 'Test'),
             default => $name,
         };

@@ -89,7 +89,7 @@ final class InfoCommand extends Command
             'Model' => $root . '/Model',
             'Routes' => $root . '/routes',
             'Migrations' => $root . '/database/migrations',
-            'Seeders' => $root . '/database/seed',
+            'Seeders' => $root . '/database/seeders',
             'Patches' => $root . '/patches',
             'Portal' => $root . '/Portal',
             'Request' => $root . '/Request',

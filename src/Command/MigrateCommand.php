@@ -23,6 +23,8 @@ final class MigrateCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('devdb', null, InputOption::VALUE_NONE, 'Run migrations using Pinoox DevDB in local development')
+            ->addOption('preview', null, InputOption::VALUE_NONE, 'Preview DevDB schema metadata without writing project DevDB files')
             ->addOption('platform', null, InputOption::VALUE_NONE, 'Also run migrate:platform before the app')
             ->setHelp(
                 <<<'HELP'
@@ -52,14 +54,32 @@ HELP
         }
 
         $runner = $this->runner($context);
+        $useDevDb = (bool) $input->getOption('devdb');
+        $preview = (bool) $input->getOption('preview');
 
         if ($input->getOption('platform')) {
-            if ($runner->run(['migrate', 'platform', '-n'], $output) !== 0) {
+            $platformArgs = ['migrate', 'platform', '-n'];
+            if ($useDevDb) {
+                $platformArgs[] = '--devdb';
+            }
+            if ($preview) {
+                $platformArgs[] = '--preview';
+            }
+
+            if ($runner->run($platformArgs, $output) !== 0) {
                 return Command::FAILURE;
             }
         }
 
-        return $runner->run(['migrate', $context->package, '-n'], $output) === 0
+        $args = ['migrate', $context->package, '-n'];
+        if ($useDevDb) {
+            $args[] = '--devdb';
+        }
+        if ($preview) {
+            $args[] = '--preview';
+        }
+
+        return $runner->run($args, $output) === 0
             ? Command::SUCCESS
             : Command::FAILURE;
     }
