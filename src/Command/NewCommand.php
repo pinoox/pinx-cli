@@ -98,8 +98,7 @@ HELP
         $io->success('Project created.');
         $io->listing([
             'cd ' . basename($info['target']),
-            'cp .env.example .env',
-            'pinx setup',
+            'pinx migrate',
             'pinx dev',
         ]);
 

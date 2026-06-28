@@ -15,8 +15,7 @@ composer global require pinoox/pinx-cli
 
 pinx new my-shop              # suggests com_my_shop — confirm or edit in the wizard
 cd my-shop
-cp .env.example .env          # set DB_* if you use a database
-pinx setup                    # platform + app migrate, seed, and patch
+pinx migrate                  # uses DevDB in development by default
 pinx dev                      # http://127.0.0.1:8000
 ```
 
@@ -29,13 +28,13 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 |------|----------------|
 | `composer global require` | Installs the `pinx` command on your machine |
 | `pinx new my-shop` | Scaffolds from `pinoox/app`; wizard suggests a 3-part package (e.g. `com_my_shop`) |
-| `.env` | Database and project paths — copy from `.env.example` |
-| `pinx setup` | One-shot: platform/app migrations → platform/app seeders → platform/app patches |
+| `.env` | Minimal by default: `APP_ENV=development` and `DB_CONNECTION=devdb`; use `.env.example` as the full reference |
+| `pinx migrate` | Runs app migrations; DevDB is used automatically for local development unless you configure another database |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
 
 Package names follow `com_{vendor}_{name}` — e.g. `com_acme_shop`, `ir_yekdo_app`. Already inside an empty folder? Use `pinx init` instead of `pinx new`.
 
-**Optional check before `setup`:** `pinx doctor` reports PHP, layout, env, DB, and build readiness.
+**Optional check:** `pinx doctor` reports PHP, layout, env, DB, and build readiness.
 
 ---
 
@@ -46,8 +45,7 @@ No global install — the template ships with `bin/pinx` inside the project:
 ```bash
 composer create-project pinoox/app my-shop
 cd my-shop
-cp .env.example .env
-pinx setup
+pinx migrate
 pinx dev
 ```
 
@@ -448,9 +446,8 @@ php bin/pinx new ../tmp-my-app --package=com_demo_shop --no-install
 cd ../tmp-my-app
 composer config repositories.pinx-cli path ../pinx-cli
 composer require pinoox/pincore pinoox/pinx-cli:@dev
-cp .env.example .env
 php bin/pinx doctor
-php bin/pinx setup
+php bin/pinx migrate
 php bin/pinx dev
 ```
 
@@ -467,7 +464,7 @@ php packages/apply-pincore-overlay.php
 - **PHP** ≥ 8.2 with extensions required by `pinoox/pincore`
 - **Composer** 2.x
 - **Node.js** + npm — only when using Vite/Vue/React frontends
-- **Database** — MySQL/MariaDB or whatever your `.env` configures (optional for static/Twig-only apps)
+- **Database** - DevDB for local development by default; MySQL/MariaDB/PostgreSQL/SQLite when configured in `.env`
 
 ---
 

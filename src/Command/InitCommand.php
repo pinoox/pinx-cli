@@ -86,7 +86,7 @@ final class InitCommand extends Command
         }
 
         $io->success('Project initialized.');
-        $io->text('Next: cp .env.example .env && pinx setup && pinx dev');
+        $io->text('Next: pinx migrate && pinx dev');
 
         return Command::SUCCESS;
     }

@@ -153,7 +153,7 @@ final class DoctorRunner
         }
 
         if (!$skipDriverExtension) {
-            $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+            $driver = strtolower($this->env['DB_CONNECTION'] ?? 'devdb');
             $pdoExtension = in_array($driver, ['auto', 'devdb'], true)
                 ? null
                 : $this->pdoExtensionForDriver($driver);
@@ -368,8 +368,8 @@ final class DoctorRunner
                 status: CheckStatus::Warn,
                 detail: 'Missing',
                 hint: is_file($exampleFile)
-                    ? 'Run: copy .env.example .env (Windows) or cp .env.example .env'
-                    : 'Create a .env file with DB_* and PINX_PACKAGE variables',
+                    ? 'Create .env with APP_ENV=development and DB_CONNECTION=devdb, or copy .env.example when you need all options'
+                    : 'Create a .env file with APP_ENV=development and DB_CONNECTION=devdb',
             ));
         } else {
             $report->add(new CheckItem(
@@ -381,30 +381,55 @@ final class DoctorRunner
             ));
         }
 
-        $requiredKeys = [
-            'PINX_PACKAGE' => 'Must match app.php package',
+        $packageEnv = $this->env['PINX_PACKAGE'] ?? '';
+        if ($packageEnv !== '') {
+            $matches = $packageEnv === $context->package;
+            $report->add(new CheckItem(
+                group: 'Environment',
+                id: 'env_pinx_package',
+                label: 'PINX_PACKAGE',
+                status: $matches ? CheckStatus::Pass : CheckStatus::Fail,
+                detail: $matches ? $packageEnv : $packageEnv . ' (expected ' . $context->package . ')',
+                hint: $matches ? null : 'Set PINX_PACKAGE=' . $context->package . ' in .env',
+            ));
+        } else {
+            $report->add(new CheckItem(
+                group: 'Environment',
+                id: 'env_pinx_package',
+                label: 'PINX_PACKAGE',
+                status: CheckStatus::Pass,
+                detail: 'Detected from app.php: ' . $context->package,
+                scored: false,
+            ));
+        }
+
+        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'devdb');
+        $needsCredentials = !in_array($driver, ['auto', 'devdb', 'sqlite'], true);
+
+        if (!$needsCredentials) {
+            $report->add(new CheckItem(
+                group: 'Environment',
+                id: 'env_db_credentials',
+                label: 'DB_* credentials',
+                status: CheckStatus::Pass,
+                detail: 'Not required for DB_CONNECTION=' . $driver,
+                scored: false,
+            ));
+        }
+
+        $databaseKeys = [
             'DB_HOST' => 'Database host',
             'DB_DATABASE' => 'Database name',
             'DB_USERNAME' => 'Database user',
         ];
 
-        foreach ($requiredKeys as $key => $desc) {
-            $value = $this->env[$key] ?? '';
-            $filled = $value !== '';
-
-            if ($key === 'PINX_PACKAGE' && $filled) {
-                $matches = $value === $context->package;
-                $report->add(new CheckItem(
-                    group: 'Environment',
-                    id: 'env_' . strtolower($key),
-                    label: $key,
-                    status: $matches ? CheckStatus::Pass : CheckStatus::Fail,
-                    detail: $matches ? $value : $value . ' (expected ' . $context->package . ')',
-                    hint: $matches ? null : 'Set PINX_PACKAGE=' . $context->package . ' in .env',
-                ));
-
+        foreach ($databaseKeys as $key => $desc) {
+            if (!$needsCredentials) {
                 continue;
             }
+
+            $value = $this->env[$key] ?? '';
+            $filled = $value !== '';
 
             $report->add(new CheckItem(
                 group: 'Environment',
@@ -419,18 +444,20 @@ final class DoctorRunner
         $appKey = $this->env['APP_KEY'] ?? '';
         $appEnv = strtolower($this->env['APP_ENV'] ?? 'development');
         $production = in_array($appEnv, ['production', 'prod'], true);
+        $appKeyStatus = match (true) {
+            $appKey !== '' => CheckStatus::Pass,
+            $production => CheckStatus::Fail,
+            default => CheckStatus::Pass,
+        };
 
         $report->add(new CheckItem(
             group: 'Environment',
             id: 'env_app_key',
             label: 'APP_KEY',
-            status: match (true) {
-                $appKey !== '' => CheckStatus::Pass,
-                $production => CheckStatus::Fail,
-                default => CheckStatus::Warn,
-            },
-            detail: $appKey !== '' ? 'Set' : 'Empty',
+            status: $appKeyStatus,
+            detail: $appKey !== '' ? 'Set' : ($production ? 'Empty' : 'Optional for local development'),
             hint: $appKey !== '' ? null : 'Generate and set APP_KEY in .env before production',
+            scored: $production || $appKey !== '',
         ));
 
         $report->add(new CheckItem(
@@ -626,7 +653,7 @@ final class DoctorRunner
 
     private function checkDatabase(DoctorReport $report): void
     {
-        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'mysql');
+        $driver = strtolower($this->env['DB_CONNECTION'] ?? 'devdb');
 
         if ($driver === 'devdb') {
             $this->checkDevDb($report, explicit: true);
@@ -742,7 +769,7 @@ final class DoctorRunner
             group: 'Database',
             id: 'db_devdb',
             label: $explicit ? 'Pinoox DevDB' : 'Auto fallback',
-            status: $local ? CheckStatus::Warn : CheckStatus::Fail,
+            status: $local ? CheckStatus::Pass : CheckStatus::Fail,
             detail: $local
                 ? 'Dev-only ' . $runtimeEngine . ' database at ' . $path
                 : 'DevDB is disabled unless APP_ENV=local',

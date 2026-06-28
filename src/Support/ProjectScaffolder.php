@@ -59,6 +59,7 @@ final class ProjectScaffolder
         }
 
         $this->applyReplacements($targetDir, $replacements);
+        $this->ensureMinimalEnv($targetDir, overwrite: true);
     }
 
     /**
@@ -78,6 +79,7 @@ final class ProjectScaffolder
         }
 
         $this->copyDirectory($source, $targetDir, $replacements);
+        $this->ensureMinimalEnv($targetDir, overwrite: true);
     }
 
     /**
@@ -113,6 +115,8 @@ final class ProjectScaffolder
                 $this->copyFile($from, $to, $replacements);
             }
         }
+
+        $this->ensureMinimalEnv($projectRoot);
     }
 
     /**
@@ -133,12 +137,21 @@ final class ProjectScaffolder
             /** @var \SplFileInfo $item */
             $relative = substr($item->getPathname(), strlen($source) + 1);
             $relative = str_replace('\\', '/', $relative);
+
+            if ($this->shouldSkipSkeletonPath($relative)) {
+                continue;
+            }
+
             $destination = $target . '/' . $relative;
 
             if ($item->isDir()) {
                 if (!is_dir($destination)) {
                     mkdir($destination, 0777, true);
                 }
+                continue;
+            }
+
+            if (!$item->isFile()) {
                 continue;
             }
 
@@ -180,6 +193,35 @@ final class ProjectScaffolder
         }
 
         return false;
+    }
+
+    private function ensureMinimalEnv(string $projectRoot, bool $overwrite = false): void
+    {
+        $envPath = rtrim(ProjectRoot::normalize($projectRoot), '/\\') . '/.env';
+
+        if (!$overwrite && is_file($envPath)) {
+            return;
+        }
+
+        file_put_contents($envPath, "APP_ENV=development\nDB_CONNECTION=devdb\n");
+    }
+
+    private function shouldSkipSkeletonPath(string $relative): bool
+    {
+        $first = explode('/', ltrim($relative, '/'), 2)[0] ?? '';
+
+        return in_array($first, [
+            '.git',
+            '.idea',
+            '.pinx-build',
+            '.vscode',
+            'export',
+            'node_modules',
+            'pinker',
+            'vendor',
+        ], true)
+            || $relative === 'composer.lock'
+            || str_ends_with($relative, '.log');
     }
 
     public static function defaultReplacements(string $package, string $displayName = '', string $developer = ''): array
