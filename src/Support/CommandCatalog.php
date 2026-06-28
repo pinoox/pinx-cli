@@ -123,6 +123,7 @@ final class CommandCatalog
             'info' => 'project',
 
             'dev' => 'develop',
+            'studio' => 'develop',
 
             'migrate' => 'database',
             'migrate:run' => 'database',
