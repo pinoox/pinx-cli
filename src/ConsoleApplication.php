@@ -96,6 +96,7 @@ final class ConsoleApplication extends Application
     public function __construct()
     {
         parent::__construct('pinx', PinxVersion::version());
+        $this->setCatchExceptions(false);
 
         foreach ([
             // Project

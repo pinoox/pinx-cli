@@ -24,6 +24,16 @@ if (!class_exists(ConsoleApplication::class)) {
     exit(1);
 }
 
+set_exception_handler(static function (Throwable $exception): void {
+    $message = $exception->getMessage() !== '' ? $exception->getMessage() : 'No exception message.';
+    fwrite(STDERR, PHP_EOL . 'Pinoox Exception' . PHP_EOL);
+    fwrite(STDERR, get_class($exception) . PHP_EOL);
+    fwrite(STDERR, $message . PHP_EOL);
+    fwrite(STDERR, 'Location: ' . $exception->getFile() . ':' . $exception->getLine() . PHP_EOL . PHP_EOL);
+    fwrite(STDERR, $exception->getTraceAsString() . PHP_EOL);
+    exit(255);
+});
+
 $args = array_slice($_SERVER['argv'] ?? [], 1);
 
 if ($args === ['-v']) {
