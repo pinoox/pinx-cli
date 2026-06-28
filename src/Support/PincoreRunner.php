@@ -20,9 +20,13 @@ final class PincoreRunner
      */
     public function run(array $args, OutputInterface $output, array $extraEnv = []): int
     {
-        $binary = $this->binary();
+        $corePath = CorePath::resolve($this->projectRoot);
+        $binary = $this->binary($corePath);
         $command = array_merge(['php', $binary], $args);
-        $env = array_merge($_ENV, DevApp::pincoreEnv($this->projectRoot), $extraEnv);
+        $env = array_merge($_ENV, [
+            'PINOOX_BASE_PATH' => $this->projectRoot,
+            'PINOOX_CORE_PATH' => $corePath,
+        ], DevApp::pincoreEnv($this->projectRoot), $extraEnv);
 
         $process = new Process($command, $this->projectRoot, $env, null, null);
         $process->setTty(Process::isTtySupported() && $output->isVerbose());
@@ -32,9 +36,9 @@ final class PincoreRunner
         });
     }
 
-    public function binary(): string
+    public function binary(?string $corePath = null): string
     {
-        $corePath = CorePath::resolve($this->projectRoot);
+        $corePath ??= CorePath::resolve($this->projectRoot);
 
         foreach ([
             $corePath . '/bin/pincore',
