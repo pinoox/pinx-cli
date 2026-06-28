@@ -47,6 +47,23 @@ try {
         return;
     }
 
+    if ($path === '/api/cli/actions') {
+        json_response(['actions' => cli_actions()]);
+        return;
+    }
+
+    if ($path === '/api/cli/run') {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            json_response(['error' => true, 'message' => 'POST is required.'], 405);
+            return;
+        }
+
+        $payload = json_decode((string) file_get_contents('php://input'), true);
+        $action = is_array($payload) ? (string) ($payload['action'] ?? '') : '';
+        json_response(run_cli_action($root, $action));
+        return;
+    }
+
     http_response_code(404);
     echo 'Not found';
 } catch (Throwable $e) {
@@ -187,6 +204,7 @@ function summary_payload(string $root): array
     $config = app_config($root);
     $tables = tables_payload($root);
     $connection = connection_config($root)['connection'];
+    $migrations = json_file(devdb_path($root) . '/meta/migrations.json', []);
 
     return [
         'app' => [
@@ -201,6 +219,11 @@ function summary_payload(string $root): array
             'path' => devdb_path($root),
             'sqlite_database' => sqlite_database($root),
             'table_count' => count($tables['tables']),
+        ],
+        'stats' => [
+            'rows' => array_sum(array_map(static fn (array $table): int => (int) ($table['rows'] ?? 0), $tables['tables'])),
+            'migrations' => count($migrations),
+            'php' => PHP_VERSION,
         ],
     ];
 }
@@ -619,6 +642,74 @@ function quote_identifier(string $name): string
     return '"' . str_replace('"', '""', $name) . '"';
 }
 
+function cli_actions(): array
+{
+    return [
+        ['id' => 'doctor', 'label' => 'Doctor', 'description' => 'Run project health checks', 'command' => 'doctor --json'],
+        ['id' => 'migrate_status', 'label' => 'Migrations', 'description' => 'Show migration status', 'command' => 'migrate:status'],
+        ['id' => 'routes', 'label' => 'Routes', 'description' => 'List route actions', 'command' => 'route:actions'],
+        ['id' => 'devdb_status', 'label' => 'DevDB Status', 'description' => 'Inspect DevDB runtime status', 'command' => 'devdb:status --json'],
+        ['id' => 'pinker_status', 'label' => 'Pinker', 'description' => 'Show Pinker cache status', 'command' => 'pinker:status'],
+        ['id' => 'deps_status', 'label' => 'Dependencies', 'description' => 'Check dependency status', 'command' => 'deps:status'],
+        ['id' => 'migrate', 'label' => 'Run Migrate', 'description' => 'Run app migrations', 'command' => 'migrate'],
+    ];
+}
+
+function run_cli_action(string $root, string $action): array
+{
+    $commands = [
+        'doctor' => ['doctor', '--json', '--no-ansi'],
+        'migrate_status' => ['migrate:status', '--no-ansi'],
+        'routes' => ['route:actions', '--no-ansi'],
+        'devdb_status' => ['devdb:status', '--json', '--no-ansi'],
+        'pinker_status' => ['pinker:status', '--no-ansi'],
+        'deps_status' => ['deps:status', '--no-ansi'],
+        'migrate' => ['migrate', '--no-ansi'],
+    ];
+
+    if (!isset($commands[$action])) {
+        throw new RuntimeException('Unknown Studio action.');
+    }
+
+    $pinx = $root . '/bin/pinx';
+    if (!is_file($pinx)) {
+        throw new RuntimeException('Project-local bin/pinx was not found.');
+    }
+
+    $descriptor = [
+        0 => ['pipe', 'r'],
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ];
+    $process = proc_open(array_merge([PHP_BINARY, $pinx], $commands[$action]), $descriptor, $pipes, $root);
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to start Pinx command.');
+    }
+
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $code = proc_close($process);
+
+    $decoded = null;
+    $trimmed = trim((string) $stdout);
+    if ($trimmed !== '' && ($trimmed[0] ?? '') === '{') {
+        $json = json_decode($trimmed, true);
+        $decoded = is_array($json) ? $json : null;
+    }
+
+    return [
+        'action' => $action,
+        'exit_code' => $code,
+        'ok' => $code === 0,
+        'stdout' => (string) $stdout,
+        'stderr' => (string) $stderr,
+        'json' => $decoded,
+    ];
+}
+
 function json_response(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -643,59 +734,100 @@ function studio_html(): string
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pinx Studio</title>
-  <style>
-    :root { color-scheme: light; --bg:#f5f7f9; --panel:#ffffff; --line:#d9e0e7; --text:#1b2733; --muted:#667789; --accent:#0b7a75; --accent-soft:#dff3f1; --danger:#b42318; }
-    * { box-sizing:border-box; }
-    body { margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif; color:var(--text); background:var(--bg); }
-    header { height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--line); background:var(--panel); }
-    h1 { margin:0; font-size:18px; font-weight:700; }
-    main { display:grid; grid-template-columns:280px 1fr; min-height:calc(100vh - 56px); }
-    aside { border-right:1px solid var(--line); background:var(--panel); padding:14px; overflow:auto; }
-    section { padding:18px; min-width:0; }
-    .meta { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px; }
-    .pill { display:inline-flex; align-items:center; height:24px; padding:0 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:650; }
-    .table-list { display:grid; gap:8px; margin-top:14px; }
-    button { border:1px solid var(--line); background:var(--panel); color:var(--text); min-height:34px; padding:7px 10px; border-radius:6px; cursor:pointer; text-align:left; }
-    button:hover, button.active { border-color:var(--accent); background:var(--accent-soft); }
-    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .muted { color:var(--muted); }
-    .toolbar { display:flex; gap:8px; align-items:center; justify-content:space-between; margin:0 0 12px; }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
-    .panel-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line); }
-    table { width:100%; border-collapse:collapse; font-size:13px; }
-    th, td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
-    th { color:var(--muted); font-weight:700; background:#fafbfc; position:sticky; top:0; }
-    td code { white-space:pre-wrap; word-break:break-word; }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
-    .empty { padding:28px; text-align:center; color:var(--muted); }
-    .error { color:var(--danger); }
-    input { height:34px; border:1px solid var(--line); border-radius:6px; padding:0 9px; min-width:80px; }
-    @media (max-width: 820px) { main { grid-template-columns:1fr; } aside { border-right:0; border-bottom:1px solid var(--line); } .grid { grid-template-columns:1fr; } }
-  </style>
-</head>
-<body>
-  <header>
-    <div>
-      <h1>Pinx Studio</h1>
-      <div class="meta"><span id="appName">Loading</span><span id="package"></span></div>
-    </div>
-      <div class="meta"><button id="exportBtn">Export</button><span id="engine" class="pill">Database</span></div>
-  </header>
-  <main>
-    <aside>
-      <div class="row"><strong>Tables</strong><button id="refresh">Refresh</button></div>
-      <div id="tables" class="table-list"></div>
-    </aside>
-    <section>
-      <div id="overview" class="grid"></div>
-      <div id="content" class="empty">Select a table to inspect schema and rows.</div>
-    </section>
-  </main>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    const state = { selected: null, limit: 50, offset: 0, search: '' };
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              bg: '#070b14',
+              panel: '#0f172a',
+              soft: '#111c31',
+              line: '#233047',
+              mint: '#2dd4bf',
+              blue: '#60a5fa',
+              rose: '#fb7185'
+            }
+          },
+          boxShadow: { glow: '0 0 40px rgba(45, 212, 191, .16)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-studio-bg text-slate-100 antialiased">
+  <div class="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(45,212,191,.18),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(96,165,250,.14),transparent_30%)]"></div>
+  <div class="grid min-h-screen grid-cols-[280px_1fr] max-lg:grid-cols-1">
+    <aside class="border-r border-white/10 bg-black/30 p-4 backdrop-blur-xl max-lg:border-b max-lg:border-r-0">
+      <div class="mb-6 flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-300 to-blue-400 font-black text-slate-950 shadow-glow">P</div>
+        <div>
+          <div class="text-lg font-bold">Pinx Studio</div>
+          <div class="text-xs text-slate-400">Development control center</div>
+        </div>
+      </div>
+      <nav class="space-y-2">
+        <button data-view="dashboard" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Dashboard</button>
+        <button data-view="database" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Database</button>
+        <button data-view="cli" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">CLI Actions</button>
+        <button data-view="export" class="nav-btn w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-200 hover:bg-white/10">Export</button>
+      </nav>
+      <div class="mt-6 rounded-2xl border border-white/10 bg-white/[.04] p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-500">Active app</div>
+        <div id="appName" class="mt-1 font-semibold">Loading</div>
+        <div id="package" class="mt-1 break-all text-xs text-slate-400"></div>
+      </div>
+      <div class="mt-3 rounded-2xl border border-teal-300/20 bg-teal-300/10 p-4">
+        <div class="text-xs uppercase tracking-wider text-teal-200/80">Connection</div>
+        <div id="engine" class="mt-1 text-sm font-semibold text-teal-200">Database</div>
+      </div>
+    </aside>
+    <main class="min-w-0 p-6">
+      <header class="mb-6 flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
+        <div>
+          <h1 id="viewTitle" class="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p class="mt-1 text-sm text-slate-400">Inspect local data, run safe Pinx actions, and keep development moving.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="refresh" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15">Refresh</button>
+          <button id="exportBtn" class="rounded-xl bg-teal-300 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-teal-200">Export JSON</button>
+        </div>
+      </header>
+      <section id="dashboardView" class="view space-y-6">
+        <div id="overview" class="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1"></div>
+        <div class="grid grid-cols-[minmax(220px,320px)_1fr] gap-4 max-xl:grid-cols-1">
+          <div class="rounded-3xl border border-white/10 bg-white/[.04] p-4">
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="font-bold">Tables</h2>
+              <span id="tableCount" class="text-xs text-slate-400"></span>
+            </div>
+            <div id="tables" class="space-y-2"></div>
+          </div>
+          <div id="content" class="rounded-3xl border border-white/10 bg-white/[.04] p-6 text-slate-400">Select a table to inspect schema and rows.</div>
+        </div>
+      </section>
+      <section id="databaseView" class="view hidden">
+        <div class="grid grid-cols-[minmax(220px,320px)_1fr] gap-4 max-xl:grid-cols-1">
+          <div class="rounded-3xl border border-white/10 bg-white/[.04] p-4"><div id="tablesDb" class="space-y-2"></div></div>
+          <div id="databaseContent" class="rounded-3xl border border-white/10 bg-white/[.04] p-6 text-slate-400">Select a table.</div>
+        </div>
+      </section>
+      <section id="cliView" class="view hidden space-y-4">
+        <div id="actions" class="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1"></div>
+        <pre id="cliOutput" class="min-h-72 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
+      </section>
+      <section id="exportView" class="view hidden">
+        <pre id="exportOutput" class="min-h-96 overflow-auto rounded-3xl border border-white/10 bg-black/40 p-4 text-xs leading-relaxed text-slate-200"></pre>
+      </section>
+    </main>
+  </div>
+  <script>
+    const state = { selected: null, limit: 50, offset: 0, search: '', view: 'dashboard', tables: [] };
     const $ = (id) => document.getElementById(id);
     const base = location.pathname.startsWith('/~studio') ? '/~studio' : '';
     const api = (url) => fetch(base + url, { cache: 'no-store' }).then(r => r.json());
+    const post = (url, body) => fetch(base + url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }).then(r => r.json());
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const cell = (value) => typeof value === 'object' && value !== null ? '<code>' + esc(JSON.stringify(value, null, 2)) + '</code>' : esc(value);
 
@@ -705,25 +837,38 @@ function studio_html(): string
       $('package').textContent = summary.app.package;
       $('engine').textContent = summary.database.connection + ' / ' + summary.database.engine;
       $('overview').innerHTML = `
-        <div class="panel"><div class="panel-head"><strong>App</strong></div><div class="empty"><strong>${esc(summary.app.package)}</strong><br><span class="muted">${esc(summary.app.root)}</span></div></div>
-        <div class="panel"><div class="panel-head"><strong>Database</strong></div><div class="empty"><strong>${esc(summary.database.engine)}</strong><br><span class="muted">${summary.database.table_count} tables</span></div></div>
+        ${metric('Package', summary.app.package, summary.app.theme)}
+        ${metric('Connection', summary.database.connection, summary.database.engine)}
+        ${metric('Tables', summary.database.table_count, 'available')}
+        ${metric('Rows', summary.stats.rows, 'loaded')}
       `;
       await loadTables();
+      await loadActions();
+    }
+
+    function metric(label, value, note) {
+      return `<div class="rounded-3xl border border-white/10 bg-white/[.05] p-5 shadow-glow"><div class="text-xs uppercase tracking-wider text-slate-500">${esc(label)}</div><div class="mt-2 truncate text-2xl font-bold">${esc(value)}</div><div class="mt-1 text-xs text-slate-400">${esc(note)}</div></div>`;
     }
 
     async function loadTables() {
       const payload = await api('/api/tables');
-      const wrap = $('tables');
+      state.tables = payload.tables || [];
+      $('tableCount').textContent = state.tables.length + ' tables';
+      renderTableList($('tables'));
+      renderTableList($('tablesDb'));
+    }
+
+    function renderTableList(wrap) {
       wrap.innerHTML = '';
-      if (!payload.tables.length) {
-        wrap.innerHTML = '<div class="empty">No tables yet. Run pinx migrate.</div>';
+      if (!state.tables.length) {
+        wrap.innerHTML = '<div class="rounded-2xl border border-dashed border-white/10 p-5 text-center text-sm text-slate-500">No tables yet. Run pinx migrate.</div>';
         return;
       }
-      payload.tables.forEach(table => {
+      state.tables.forEach(table => {
         const btn = document.createElement('button');
-        btn.className = table.name === state.selected ? 'active' : '';
-        btn.innerHTML = '<div class="row"><strong>' + esc(table.name) + '</strong><span class="muted">' + table.rows + ' rows</span></div><div class="muted">' + table.columns + ' columns</div>';
-        btn.onclick = () => { state.selected = table.name; state.offset = 0; state.search = ''; loadTable(); loadTables(); };
+        btn.className = 'w-full rounded-2xl border px-3 py-3 text-left transition ' + (table.name === state.selected ? 'border-teal-300/70 bg-teal-300/10' : 'border-white/10 bg-white/[.03] hover:bg-white/[.07]');
+        btn.innerHTML = '<div class="flex items-center justify-between gap-3"><strong class="truncate">' + esc(table.name) + '</strong><span class="rounded-full bg-white/10 px-2 py-0.5 text-xs text-slate-300">' + table.rows + ' rows</span></div><div class="mt-1 text-xs text-slate-500">' + table.columns + ' columns · pk ' + esc(table.primary_key || 'none') + '</div>';
+        btn.onclick = () => { state.selected = table.name; state.offset = 0; state.search = ''; loadTable(); renderTableList($('tables')); renderTableList($('tablesDb')); };
         wrap.appendChild(btn);
       });
     }
@@ -742,17 +887,19 @@ function studio_html(): string
       }).join('');
       const rowHeaders = Array.from(new Set(payload.rows.flatMap(row => Object.keys(row || {}))));
       const dataRows = payload.rows.map(row => '<tr>' + rowHeaders.map(key => '<td>' + cell(row[key]) + '</td>').join('') + '</tr>').join('');
-      $('content').innerHTML = `
-        <div class="toolbar">
-          <div><h2 style="margin:0">${esc(payload.table)}</h2><div class="muted">${payload.row_count} rows · primary key: ${esc(payload.primary_key || 'none')}</div></div>
-          <div class="row"><input id="search" placeholder="Search rows" value="${esc(state.search)}"><button onclick="applySearch()">Search</button><button onclick="prevPage()">Prev</button><input id="limit" type="number" min="1" max="500" value="${state.limit}"><button onclick="nextPage(${payload.row_count})">Next</button></div>
+      const html = `
+        <div class="mb-4 flex items-center justify-between gap-3 max-lg:flex-col max-lg:items-start">
+          <div><h2 class="text-2xl font-bold">${esc(payload.table)}</h2><div class="text-sm text-slate-400">${payload.row_count} rows · primary key: ${esc(payload.primary_key || 'none')}</div></div>
+          <div class="flex flex-wrap gap-2"><input id="search" class="h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-slate-100 outline-none focus:border-teal-300" placeholder="Search rows" value="${esc(state.search)}"><button class="rounded-xl bg-teal-300 px-3 py-2 text-sm font-bold text-slate-950" onclick="applySearch()">Search</button><button class="rounded-xl border border-white/10 px-3 py-2 text-sm" onclick="prevPage()">Prev</button><input id="limit" class="h-10 w-20 rounded-xl border border-white/10 bg-black/30 px-3 text-sm" type="number" min="1" max="500" value="${state.limit}"><button class="rounded-xl border border-white/10 px-3 py-2 text-sm" onclick="nextPage(${payload.row_count})">Next</button></div>
         </div>
-        <div class="grid">
-          <div class="panel"><div class="panel-head"><strong>Schema</strong></div><table><thead><tr><th>Name</th><th>Type</th><th>Nullable</th><th>Default</th><th>Primary</th></tr></thead><tbody>${schemaRows || '<tr><td colspan="5" class="muted">No columns</td></tr>'}</tbody></table></div>
-          <div class="panel"><div class="panel-head"><strong>Indexes</strong></div><div class="empty"><code>${esc(JSON.stringify(payload.indexes || [], null, 2))}</code></div></div>
+        <div class="mb-4 grid grid-cols-2 gap-4 max-xl:grid-cols-1">
+          <div class="overflow-hidden rounded-3xl border border-white/10 bg-black/25"><div class="border-b border-white/10 px-4 py-3 font-bold">Schema</div><div class="overflow-auto"><table class="w-full text-left text-sm"><thead class="text-xs uppercase text-slate-500"><tr><th class="px-4 py-3">Name</th><th>Type</th><th>Nullable</th><th>Default</th><th>Primary</th></tr></thead><tbody class="divide-y divide-white/10">${schemaRows || '<tr><td colspan="5" class="px-4 py-6 text-slate-500">No columns</td></tr>'}</tbody></table></div></div>
+          <div class="overflow-hidden rounded-3xl border border-white/10 bg-black/25"><div class="border-b border-white/10 px-4 py-3 font-bold">Indexes</div><pre class="max-h-72 overflow-auto p-4 text-xs text-slate-300">${esc(JSON.stringify(payload.indexes || [], null, 2))}</pre></div>
         </div>
-        <div class="panel"><div class="panel-head"><strong>Rows</strong><span class="muted">offset ${payload.offset}, limit ${payload.limit}</span></div><div style="overflow:auto"><table><thead><tr>${rowHeaders.map(h => '<th>' + esc(h) + '</th>').join('')}</tr></thead><tbody>${dataRows || '<tr><td class="muted">No rows</td></tr>'}</tbody></table></div></div>
+        <div class="overflow-hidden rounded-3xl border border-white/10 bg-black/25"><div class="flex items-center justify-between border-b border-white/10 px-4 py-3"><strong>Rows</strong><span class="text-xs text-slate-500">offset ${payload.offset}, limit ${payload.limit}</span></div><div class="overflow-auto"><table class="w-full text-left text-sm"><thead class="text-xs uppercase text-slate-500"><tr>${rowHeaders.map(h => '<th class="px-4 py-3">' + esc(h) + '</th>').join('')}</tr></thead><tbody class="divide-y divide-white/10">${dataRows || '<tr><td class="px-4 py-6 text-slate-500">No rows</td></tr>'}</tbody></table></div></div>
       `;
+      $('content').innerHTML = html;
+      $('databaseContent').innerHTML = html;
       $('limit').onchange = (event) => { state.limit = Math.max(1, Math.min(500, Number(event.target.value || 50))); state.offset = 0; loadTable(); };
       $('search').onkeydown = (event) => { if (event.key === 'Enter') applySearch(); };
     }
@@ -762,6 +909,7 @@ function studio_html(): string
     function prevPage() { state.offset = Math.max(0, state.offset - state.limit); loadTable(); }
     $('exportBtn').onclick = async () => {
       const payload = await api('/api/export');
+      $('exportOutput').textContent = JSON.stringify(payload, null, 2);
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -769,8 +917,37 @@ function studio_html(): string
       a.click();
       URL.revokeObjectURL(a.href);
     };
+
+    async function loadActions() {
+      const payload = await api('/api/cli/actions');
+      $('actions').innerHTML = (payload.actions || []).map(action => `
+        <button class="rounded-3xl border border-white/10 bg-white/[.04] p-4 text-left transition hover:border-teal-300/50 hover:bg-teal-300/10" onclick="runAction('${esc(action.id)}')">
+          <div class="font-bold">${esc(action.label)}</div>
+          <div class="mt-1 text-sm text-slate-400">${esc(action.description)}</div>
+          <code class="mt-3 block rounded-xl bg-black/30 px-3 py-2 text-xs text-teal-200">${esc(action.command)}</code>
+        </button>
+      `).join('');
+    }
+
+    async function runAction(action) {
+      $('cliOutput').textContent = 'Running ' + action + '...';
+      const payload = await post('/api/cli/run', { action });
+      $('cliOutput').textContent = (payload.stdout || '') + (payload.stderr ? '\n[stderr]\n' + payload.stderr : '') || JSON.stringify(payload, null, 2);
+    }
+
+    function switchView(view) {
+      state.view = view;
+      document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+      $(view + 'View').classList.remove('hidden');
+      $('viewTitle').textContent = view.charAt(0).toUpperCase() + view.slice(1);
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('bg-white/10', btn.dataset.view === view));
+    }
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.onclick = () => switchView(btn.dataset.view));
     $('refresh').onclick = () => { loadTables(); if (state.selected) loadTable(); };
-    boot().catch(error => { $('content').innerHTML = '<div class="empty error">' + esc(error.message) + '</div>'; });
+    boot().then(() => {
+      const initial = (location.hash || '#dashboard').slice(1);
+      switchView(['dashboard', 'database', 'cli', 'export'].includes(initial) ? initial : 'dashboard');
+    }).catch(error => { $('content').innerHTML = '<div class="rounded-3xl border border-rose-400/20 bg-rose-400/10 p-6 text-rose-200">' + esc(error.message) + '</div>'; });
   </script>
 </body>
 </html>
