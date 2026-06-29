@@ -14,17 +14,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'studio',
-    description: 'Start Pinx Studio, a local development dashboard for the current app',
+    name: 'inspector',
+    description: 'Start Pinx Inspector, a local development dashboard for the current app',
+    aliases: ['studio'],
 )]
 final class StudioCommand extends Command
 {
     protected function configure(): void
     {
         $this
-            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Studio host', '127.0.0.1')
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Studio port', '8010')
-            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open Studio in the browser');
+            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Inspector host', '127.0.0.1')
+            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Inspector port', '8010')
+            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open Inspector in the browser');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -44,7 +45,7 @@ final class StudioCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success('Pinx Studio started.');
+        $io->success('Pinx Inspector started.');
         $io->text($url);
 
         if ($input->getOption('open')) {

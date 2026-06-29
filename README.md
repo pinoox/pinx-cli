@@ -33,7 +33,7 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 | `pinx repair` | Repairs a folder so it can run as a Pinx single-app project |
 | `pinx migrate` | Runs app migrations; DevDB is used automatically for local development unless you configure another database |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
-| `pinx studio` | Standalone local browser dashboard for database tables, schema, and rows |
+| `pinx inspector` | Standalone local browser dashboard for database tables, schema, routes, logs, and runtime health |
 
 Package names follow `com_{vendor}_{name}` — e.g. `com_acme_shop`, `ir_yekdo_app`. Already inside an empty folder? Use `pinx init` instead of `pinx new`.
 
@@ -50,14 +50,14 @@ pinx dev
 
 Use `pinx sync` when you only want to add missing template support files. Use `pinx sync --force` or `pinx repair --force` only when you intentionally want template-managed support files overwritten.
 
-Pinx Studio is available automatically while `pinx dev` is running:
+Pinx Inspector is available automatically while `pinx dev` is running:
 
 ```bash
 pinx dev
 # open http://127.0.0.1:8000/~studio
 ```
 
-Use `pinx dev --no-studio` to disable it, or `pinx studio` as a standalone fallback when the app server is not running. Studio is local-only and works without Node, npm, Electron, or extra setup.
+Use `pinx dev --no-inspector` to disable it, or `pinx inspector` as a standalone fallback when the app server is not running. `pinx studio`, `--no-studio`, and `--open-studio` remain available as deprecated aliases. Inspector is local-only and works without Node, npm, Electron, or extra setup.
 
 ---
 

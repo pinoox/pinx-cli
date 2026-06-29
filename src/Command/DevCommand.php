@@ -27,8 +27,10 @@ final class DevCommand extends Command
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Server host')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Server port')
             ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'Skip Vite/npm dev')
-            ->addOption('no-studio', null, InputOption::VALUE_NONE, 'Disable Pinx Studio on /~studio')
-            ->addOption('open-studio', null, InputOption::VALUE_NONE, 'Open Pinx Studio in the browser')
+            ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~studio')
+            ->addOption('open-inspector', null, InputOption::VALUE_NONE, 'Open Pinx Inspector in the browser')
+            ->addOption('no-studio', null, InputOption::VALUE_NONE, 'Deprecated alias for --no-inspector')
+            ->addOption('open-studio', null, InputOption::VALUE_NONE, 'Deprecated alias for --open-inspector')
             ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start');
     }
 
@@ -52,7 +54,7 @@ final class DevCommand extends Command
         $extraEnv = [];
         $studioUrl = 'http://' . $host . ':' . $port . '/~studio';
 
-        if (!$input->getOption('no-studio')) {
+        if (!$input->getOption('no-inspector') && !$input->getOption('no-studio')) {
             try {
                 $studio = new StudioServer();
                 $extraEnv = [
@@ -62,13 +64,13 @@ final class DevCommand extends Command
                     'PINX_STUDIO_WIDGET' => '1',
                     'PINX_STUDIO_PROJECT_ROOT' => $root,
                 ];
-                $io->note('Pinx Studio: ' . $studioUrl);
+                $io->note('Pinx Inspector: ' . $studioUrl);
 
-                if ($input->getOption('open-studio')) {
+                if ($input->getOption('open-inspector') || $input->getOption('open-studio')) {
                     $studio->openBrowser($studioUrl);
                 }
             } catch (\Throwable $e) {
-                $io->warning('Pinx Studio could not start: ' . $e->getMessage());
+                $io->warning('Pinx Inspector could not start: ' . $e->getMessage());
             }
         }
 

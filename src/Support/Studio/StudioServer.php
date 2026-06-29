@@ -27,7 +27,7 @@ final class StudioServer
             }
         }
 
-        throw new \RuntimeException('No available Studio port found near ' . $preferredPort . '.');
+        throw new \RuntimeException('No available Inspector port found near ' . $preferredPort . '.');
     }
 
     public function url(string $host, int $port): string
@@ -42,7 +42,7 @@ final class StudioServer
         $router = $this->router();
 
         if (!is_file($router)) {
-            throw new \RuntimeException('Pinx Studio router was not found: ' . $router);
+            throw new \RuntimeException('Pinx Inspector router was not found: ' . $router);
         }
 
         return new Process(
@@ -78,7 +78,7 @@ final class StudioServer
     private function assertLocalHost(string $host): void
     {
         if (!in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
-            throw new \RuntimeException('Pinx Studio is local-only. Use 127.0.0.1, localhost, or ::1.');
+            throw new \RuntimeException('Pinx Inspector is local-only. Use 127.0.0.1, localhost, or ::1.');
         }
     }
 }
