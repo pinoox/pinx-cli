@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\ProjectRoot;
-use Pinoox\PinxCli\Support\Studio\StudioServer;
+use Pinoox\PinxCli\Support\Inspector\InspectorServer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,9 +16,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(
     name: 'inspector',
     description: 'Start Pinx Inspector, a local development dashboard for the current app',
-    aliases: ['studio'],
 )]
-final class StudioCommand extends Command
+final class InspectorCommand extends Command
 {
     protected function configure(): void
     {
@@ -34,7 +33,7 @@ final class StudioCommand extends Command
 
         try {
             $root = ProjectRoot::require();
-            $server = new StudioServer();
+            $server = new InspectorServer();
             $host = (string) $input->getOption('host');
             $port = $server->findPort($host, (int) $input->getOption('port'));
             $url = $server->url($host, $port);

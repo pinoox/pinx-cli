@@ -18,6 +18,9 @@
   "bin": [
     "bin/pinx"
   ],
+  "suggest": {
+    "pinoox/pinx-inspector": "Install in require-dev to enable the graphical Pinx Inspector dashboard during pinx dev"
+  },
   "minimum-stability": "dev",
   "prefer-stable": true
 }

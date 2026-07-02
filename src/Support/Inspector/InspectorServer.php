@@ -2,16 +2,32 @@
 
 declare(strict_types=1);
 
-namespace Pinoox\PinxCli\Support\Studio;
+namespace Pinoox\PinxCli\Support\Inspector;
 
 use Pinoox\PinxCli\Support\ProjectRoot;
 use Symfony\Component\Process\Process;
 
-final class StudioServer
+final class InspectorServer
 {
-    public function router(): string
+    public function router(?string $projectRoot = null): string
     {
-        return dirname(__DIR__, 3) . '/resources/studio/router.php';
+        if ($projectRoot !== null) {
+            $autoload = ProjectRoot::normalize($projectRoot) . '/vendor/autoload.php';
+            if (is_file($autoload)) {
+                require_once $autoload;
+            }
+        }
+
+        if (class_exists(\Pinoox\PinxInspector\InspectorPackage::class)) {
+            return \Pinoox\PinxInspector\InspectorPackage::router();
+        }
+
+        $monorepoRouter = dirname(__DIR__, 4) . '/pinx-inspector/resources/router.php';
+        if (is_file($monorepoRouter)) {
+            return $monorepoRouter;
+        }
+
+        throw new \RuntimeException('Pinx Inspector is not installed. Run composer require --dev pinoox/pinx-inspector.');
     }
 
     public function findPort(string $host, int $preferredPort): int
@@ -39,7 +55,7 @@ final class StudioServer
     {
         $this->assertLocalHost($host);
 
-        $router = $this->router();
+        $router = $this->router($projectRoot);
 
         if (!is_file($router)) {
             throw new \RuntimeException('Pinx Inspector router was not found: ' . $router);
@@ -49,9 +65,9 @@ final class StudioServer
             [PHP_BINARY, '-S', $host . ':' . $port, $router],
             ProjectRoot::normalize($projectRoot),
             [
-                'PINX_STUDIO_PROJECT_ROOT' => ProjectRoot::normalize($projectRoot),
-                'PINX_STUDIO_HOST' => $host,
-                'PINX_STUDIO_PORT' => (string) $port,
+                'PINX_INSPECTOR_PROJECT_ROOT' => ProjectRoot::normalize($projectRoot),
+                'PINX_INSPECTOR_HOST' => $host,
+                'PINX_INSPECTOR_PORT' => (string) $port,
             ],
             null,
             null,

@@ -75,7 +75,7 @@ use Pinoox\PinxCli\Command\ScheduleListCommand;
 use Pinoox\PinxCli\Command\ScheduleRunCommand;
 use Pinoox\PinxCli\Command\SeederRunCommand;
 use Pinoox\PinxCli\Command\SetupCommand;
-use Pinoox\PinxCli\Command\StudioCommand;
+use Pinoox\PinxCli\Command\InspectorCommand;
 use Pinoox\PinxCli\Command\SyncCommand;
 use Pinoox\PinxCli\Command\TestCommand;
 use Pinoox\PinxCli\Command\TokenCreateCommand;
@@ -118,7 +118,7 @@ final class ConsoleApplication extends Application
 
             // Development
             new DevCommand(),
-            new StudioCommand(),
+            new InspectorCommand(),
 
             // Database
             new MigrateCommand(),

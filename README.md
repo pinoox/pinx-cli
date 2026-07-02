@@ -33,7 +33,7 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 | `pinx repair` | Repairs a folder so it can run as a Pinx single-app project |
 | `pinx migrate` | Runs app migrations; DevDB is used automatically for local development unless you configure another database |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
-| `pinx inspector` | Standalone local browser dashboard for database tables, schema, routes, logs, and runtime health |
+| `pinx inspector` | Standalone local browser dashboard powered by the optional `pinoox/pinx-inspector` dev package |
 
 Package names follow `com_{vendor}_{name}` — e.g. `com_acme_shop`, `ir_yekdo_app`. Already inside an empty folder? Use `pinx init` instead of `pinx new`.
 
@@ -54,10 +54,16 @@ Pinx Inspector is available automatically while `pinx dev` is running:
 
 ```bash
 pinx dev
-# open http://127.0.0.1:8000/~studio
+# open http://127.0.0.1:8000/~inspector
 ```
 
-Use `pinx dev --no-inspector` to disable it, or `pinx inspector` as a standalone fallback when the app server is not running. `pinx studio`, `--no-studio`, and `--open-studio` remain available as deprecated aliases. Inspector is local-only and works without Node, npm, Electron, or extra setup.
+Pinx Inspector is provided by `pinoox/pinx-inspector` and should be installed in `require-dev`:
+
+```bash
+composer require --dev pinoox/pinx-inspector
+```
+
+Use `pinx dev --no-inspector` to disable it, or `pinx inspector` as a standalone fallback when the app server is not running. Inspector is local-only and works without Node, npm, Electron, or extra setup.
 
 ---
 

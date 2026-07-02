@@ -7,7 +7,7 @@ namespace Pinoox\PinxCli\Command;
 use Pinoox\PinxCli\Support\DevApp;
 use Pinoox\PinxCli\Support\PincoreRunner;
 use Pinoox\PinxCli\Support\ProjectRoot;
-use Pinoox\PinxCli\Support\Studio\StudioServer;
+use Pinoox\PinxCli\Support\Inspector\InspectorServer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,10 +27,8 @@ final class DevCommand extends Command
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Server host')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Server port')
             ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'Skip Vite/npm dev')
-            ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~studio')
+            ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~inspector')
             ->addOption('open-inspector', null, InputOption::VALUE_NONE, 'Open Pinx Inspector in the browser')
-            ->addOption('no-studio', null, InputOption::VALUE_NONE, 'Deprecated alias for --no-inspector')
-            ->addOption('open-studio', null, InputOption::VALUE_NONE, 'Deprecated alias for --open-inspector')
             ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start');
     }
 
@@ -52,22 +50,22 @@ final class DevCommand extends Command
         $port = (string) ($input->getOption('port') ?: getenv('SERVER_PORT') ?: '8000');
         $stack = $this->frontendStack($root);
         $extraEnv = [];
-        $studioUrl = 'http://' . $host . ':' . $port . '/~studio';
+        $inspectorUrl = 'http://' . $host . ':' . $port . '/~inspector';
 
-        if (!$input->getOption('no-inspector') && !$input->getOption('no-studio')) {
+        if (!$input->getOption('no-inspector')) {
             try {
-                $studio = new StudioServer();
+                $inspector = new InspectorServer();
                 $extraEnv = [
-                    'PINX_STUDIO_ENABLED' => '1',
-                    'PINX_STUDIO_ROUTE' => '/~studio',
-                    'PINX_STUDIO_ROUTER' => $studio->router(),
-                    'PINX_STUDIO_WIDGET' => '1',
-                    'PINX_STUDIO_PROJECT_ROOT' => $root,
+                    'PINX_INSPECTOR_ENABLED' => '1',
+                    'PINX_INSPECTOR_ROUTE' => '/~inspector',
+                    'PINX_INSPECTOR_ROUTER' => $inspector->router($root),
+                    'PINX_INSPECTOR_WIDGET' => '1',
+                    'PINX_INSPECTOR_PROJECT_ROOT' => $root,
                 ];
-                $io->note('Pinx Inspector: ' . $studioUrl);
+                $io->note('Pinx Inspector: ' . $inspectorUrl);
 
-                if ($input->getOption('open-inspector') || $input->getOption('open-studio')) {
-                    $studio->openBrowser($studioUrl);
+                if ($input->getOption('open-inspector')) {
+                    $inspector->openBrowser($inspectorUrl);
                 }
             } catch (\Throwable $e) {
                 $io->warning('Pinx Inspector could not start: ' . $e->getMessage());
