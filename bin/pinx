@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 use Pinoox\PinxCli\ConsoleApplication;
+use Pinoox\PinxCli\Support\CliErrorRenderer;
 use Pinoox\PinxCli\Support\ConsoleEncoding;
 use Pinoox\PinxCli\Support\PinxVersion;
 
@@ -28,12 +29,7 @@ if (!class_exists(ConsoleApplication::class)) {
 ConsoleEncoding::bootUtf8();
 
 set_exception_handler(static function (Throwable $exception): void {
-    $message = $exception->getMessage() !== '' ? $exception->getMessage() : 'No exception message.';
-    fwrite(STDERR, PHP_EOL . 'Pinoox Exception' . PHP_EOL);
-    fwrite(STDERR, get_class($exception) . PHP_EOL);
-    fwrite(STDERR, $message . PHP_EOL);
-    fwrite(STDERR, 'Location: ' . $exception->getFile() . ':' . $exception->getLine() . PHP_EOL . PHP_EOL);
-    fwrite(STDERR, $exception->getTraceAsString() . PHP_EOL);
+    fwrite(STDERR, (new CliErrorRenderer())->render($exception));
     exit(255);
 });
 
