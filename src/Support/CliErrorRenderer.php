@@ -9,13 +9,20 @@ use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionIn
 
 final class CliErrorRenderer
 {
+    private readonly CliTerminalStyle $style;
+
+    public function __construct(?CliTerminalStyle $style = null)
+    {
+        $this->style = $style ?? new CliTerminalStyle();
+    }
+
     public function render(\Throwable $exception): string
     {
         if ($exception instanceof ConsoleExceptionInterface) {
             return $this->renderConsoleError($exception);
         }
 
-        return $this->renderPinooxError($exception);
+        return $this->renderRuntimeError($exception);
     }
 
     private function renderConsoleError(ConsoleExceptionInterface $exception): string
@@ -28,21 +35,23 @@ final class CliErrorRenderer
 
         $lines = [
             '',
-            $this->color('Command error', '1;97', '43'),
-            $this->wrap($message, 2, '97'),
+            $this->style->banner('Command error', '1;97', '43'),
+            $this->style->rule(),
+            $this->style->wrap($message),
             '',
         ];
 
         if ($command !== null && $command !== '') {
-            $lines[] = $this->field('Command', $command);
+            $lines[] = $this->style->field('Command', $command);
         }
 
         if ($suggestions !== []) {
             $lines[] = '';
-            $lines[] = $this->section('Try');
+            $lines[] = $this->style->section('Try');
+            $lines[] = '';
 
             foreach ($suggestions as $suggestion) {
-                $lines[] = '  - ' . $suggestion;
+                $lines[] = '  ' . $this->style->color('>', '1;96') . ' ' . $suggestion;
             }
         }
 
@@ -51,38 +60,49 @@ final class CliErrorRenderer
         return implode(PHP_EOL, $lines);
     }
 
-    private function renderPinooxError(\Throwable $exception): string
+    private function renderRuntimeError(\Throwable $exception): string
     {
+        $class = get_class($exception);
         $message = $exception->getMessage() !== '' ? $exception->getMessage() : 'No exception message.';
         $project = $this->relativePath((string) getcwd());
         $location = $this->relativePath($exception->getFile()) . ':' . $exception->getLine();
 
         $lines = [
             '',
-            $this->color('Pinx failed', '1;97', '41'),
-            $this->wrap($message, 2, '97'),
+            $this->style->banner('Pinx Exception', '1;97', '41'),
+            $this->style->rule(),
+            $this->style->shortClass($class),
+            $this->style->dim('  ' . $class),
             '',
-            $this->field('Type', get_class($exception)),
-            $this->field('Location', $location),
-            $this->field('Project', $project),
+            $this->style->wrap($message),
+            '',
+            $this->style->rule('-'),
+            $this->style->field('Location', $location, '1;97'),
+            $this->style->field('Project', $project, '2;37'),
         ];
 
         $hint = $this->hintFor($exception);
 
         if ($hint !== null) {
             $lines[] = '';
-            $lines[] = $this->section('Hint');
-            $lines[] = '  ' . $hint;
+            $lines[] = $this->style->section('Hint');
+            $lines[] = '';
+            $lines[] = $this->style->bullet('Suggestion', $hint);
         }
 
         $trace = $this->userTrace($exception);
 
         if ($trace !== []) {
             $lines[] = '';
-            $lines[] = $this->section('Trace');
+            $lines[] = $this->style->section('Trace');
+            $lines[] = '';
 
             foreach ($trace as $index => $frame) {
-                $lines[] = sprintf('  #%02d %s', $index, $frame);
+                $lines[] = sprintf(
+                    '  %s %s',
+                    $this->style->color(sprintf('#%02d', $index), '1;90'),
+                    $this->style->color($frame, '2;37'),
+                );
             }
         }
 
@@ -97,19 +117,19 @@ final class CliErrorRenderer
 
         if ($exception instanceof CommandNotFoundException) {
             foreach ($exception->getAlternatives() as $alternative) {
-                $suggestions[] = $this->color($script . ' ' . $alternative, '1;32');
+                $suggestions[] = $this->style->accent($script . ' ' . $alternative);
             }
 
             if ($command === 'serve') {
-                $suggestions[] = $this->color($script . ' dev', '1;32') . ' to start the single-app development server.';
+                $suggestions[] = $this->style->accent($script . ' dev') . $this->style->dim(' - start the development server');
             }
         }
 
         if ($command !== null && $command !== '') {
-            $suggestions[] = $this->color($script . ' help', '1;32') . ' to see available commands.';
+            $suggestions[] = $this->style->accent($script . ' help') . $this->style->dim(' - command usage');
         }
 
-        $suggestions[] = $this->color($script . ' list', '1;32') . ' to list all commands.';
+        $suggestions[] = $this->style->accent($script . ' list') . $this->style->dim(' - all commands');
 
         return array_values(array_unique($suggestions));
     }
@@ -180,43 +200,5 @@ final class CliErrorRenderer
         }
 
         return $path;
-    }
-
-    private function field(string $label, string $value): string
-    {
-        return sprintf('  %s %s', str_pad($label . ':', 10), $value);
-    }
-
-    private function section(string $title): string
-    {
-        return $this->color($title, '1;96');
-    }
-
-    private function wrap(string $text, int $indent = 0, ?string $color = null): string
-    {
-        $prefix = str_repeat(' ', $indent);
-        $wrapped = wordwrap($text, 88 - $indent, PHP_EOL . $prefix, true);
-        $wrapped = $prefix . $wrapped;
-
-        return $color !== null ? $this->color($wrapped, $color) : $wrapped;
-    }
-
-    private function color(string $text, string $style, ?string $background = null): string
-    {
-        if (!$this->supportsColor()) {
-            return $text;
-        }
-
-        $code = $background !== null ? $style . ';' . $background : $style;
-
-        return "\033[" . $code . 'm' . $text . "\033[0m";
-    }
-
-    private function supportsColor(): bool
-    {
-        return !isset($_SERVER['NO_COLOR'])
-            && function_exists('stream_isatty')
-            && defined('STDERR')
-            && stream_isatty(STDERR);
     }
 }

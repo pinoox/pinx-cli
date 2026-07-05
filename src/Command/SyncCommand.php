@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'sync',
-    description: 'Sync single-app Pinx support files from the pinoox/app template',
+    description: 'Sync missing Pinx support files (platform launcher, bin/pinx, index.php)',
 )]
 final class SyncCommand extends Command
 {
@@ -25,7 +25,19 @@ final class SyncCommand extends Command
             ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name when it cannot be detected')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'App display name for generated files')
             ->addOption('developer', null, InputOption::VALUE_REQUIRED, 'Developer name for generated files')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing template-managed support files');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing Pinx support files')
+            ->setHelp(
+                <<<'HELP'
+Adds missing Pinx infrastructure files only.
+
+This command does not overwrite app.php, routes, composer.json, or other app-specific files
+unless you pass --force for the support file list itself.
+
+Examples:
+  pinx sync
+  pinx sync --force
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,12 +61,12 @@ final class SyncCommand extends Command
         }
 
         if ($changed === []) {
-            $io->success('Single-app files are already in sync.');
+            $io->success('Pinx support files are already in sync.');
 
             return Command::SUCCESS;
         }
 
-        $io->success('Single-app files synced.');
+        $io->success('Pinx support files synced.');
         $io->listing($changed);
 
         return Command::SUCCESS;

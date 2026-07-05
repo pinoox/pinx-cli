@@ -177,6 +177,28 @@ final class AppContext
         return $this->root . '/' . $this->iconRelativePath();
     }
 
+    /**
+     * @return list<string>
+     */
+    public function routeFiles(): array
+    {
+        $routes = $this->config['router']['routes'] ?? [];
+
+        if (!is_array($routes)) {
+            return [];
+        }
+
+        $files = [];
+
+        foreach ($routes as $routeFile) {
+            if (is_string($routeFile) && $routeFile !== '') {
+                $files[] = $routeFile;
+            }
+        }
+
+        return $files;
+    }
+
     private static function fromDirectory(string $dir): ?self
     {
         $appFile = $dir . '/app.php';

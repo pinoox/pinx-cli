@@ -59,7 +59,7 @@ final class ProjectScaffolder
         }
 
         $this->applyReplacements($targetDir, $replacements);
-        $this->ensureMinimalEnv($targetDir, overwrite: true);
+        $this->writeMinimalEnv($targetDir, overwrite: true);
     }
 
     /**
@@ -79,7 +79,7 @@ final class ProjectScaffolder
         }
 
         $this->copyDirectory($source, $targetDir, $replacements);
-        $this->ensureMinimalEnv($targetDir, overwrite: true);
+        $this->writeMinimalEnv($targetDir, overwrite: true);
     }
 
     /**
@@ -129,32 +129,243 @@ final class ProjectScaffolder
         bool $overwrite = false,
         ?OutputInterface $output = null,
     ): array {
+        return $this->syncSupportFiles($projectRoot, $replacements, $overwrite, $output);
+    }
+
+    /**
+     * Sync only Pinx infrastructure files — never app.php, routes, or composer.json.
+     *
+     * @param array<string, string> $replacements
+     * @return list<string>
+     */
+    public function syncSupportFiles(
+        string $projectRoot,
+        array $replacements,
+        bool $overwrite = false,
+        ?OutputInterface $output = null,
+    ): array {
         $source = TemplatePath::resolve($output);
         $projectRoot = ProjectRoot::normalize($projectRoot);
         $changed = [];
 
-        foreach ($this->syncFiles() as $relative) {
-            $from = $source . '/' . $relative;
-            $to = $projectRoot . '/' . $relative;
-
-            if (!is_file($from)) {
-                continue;
+        foreach (self::supportSyncFiles() as $relative) {
+            if ($this->copySupportFile($source, $projectRoot, $relative, $replacements, $overwrite)) {
+                $changed[] = $relative;
             }
-
-            if (is_file($to) && !$overwrite) {
-                continue;
-            }
-
-            $this->copyFile($from, $to, $replacements);
-            $changed[] = $relative;
-        }
-
-        if (!is_file($projectRoot . '/.env')) {
-            $this->ensureMinimalEnv($projectRoot);
-            $changed[] = '.env';
         }
 
         return $changed;
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    public function copySupportFileIfMissing(
+        string $projectRoot,
+        string $relative,
+        array $replacements,
+        ?OutputInterface $output = null,
+    ): bool {
+        $source = TemplatePath::resolve($output);
+
+        return $this->copySupportFile(
+            $source,
+            ProjectRoot::normalize($projectRoot),
+            $relative,
+            $replacements,
+            overwrite: false,
+        );
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    private function copySupportFile(
+        string $sourceRoot,
+        string $projectRoot,
+        string $relative,
+        array $replacements,
+        bool $overwrite,
+    ): bool {
+        $from = $sourceRoot . '/' . $relative;
+        $to = $projectRoot . '/' . $relative;
+
+        if (!is_file($from)) {
+            return false;
+        }
+
+        if (is_file($to) && !$overwrite) {
+            return false;
+        }
+
+        $this->copyFile($from, $to, $replacements);
+
+        return true;
+    }
+
+    public function ensureMinimalEnv(string $projectRoot, bool $overwrite = false): void
+    {
+        $this->writeMinimalEnv($projectRoot, $overwrite);
+    }
+
+    public function ensureRouterActionsClass(string $projectRoot, string $package): ?string
+    {
+        $projectRoot = ProjectRoot::normalize($projectRoot);
+        $actionsFile = $projectRoot . '/routes/actions.php';
+        $target = $projectRoot . '/Router/Actions.php';
+
+        if (!is_file($actionsFile) || is_file($target)) {
+            return null;
+        }
+
+        $contents = file_get_contents($actionsFile);
+
+        if (!is_string($contents) || !self::usesRouterActionsClass($contents)) {
+            return null;
+        }
+
+        $directory = dirname($target);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        file_put_contents($target, self::renderRouterActionsClass($package, self::extractActionConstants($contents)));
+
+        return 'Router/Actions.php';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function supportSyncFiles(): array
+    {
+        return [
+            '.env.example',
+            '.gitignore',
+            '.htaccess',
+            'bin/pinx',
+            'index.php',
+            'platform/app-router.config.php',
+            'platform/apps.config.php',
+            'platform/domain.config.php',
+            'platform/launcher/bootstrap.php',
+            'platform/launcher/server.php',
+            'platform/pinoox.config.php',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function runtimeDirectories(): array
+    {
+        return [
+            'storage',
+            'storage/logs',
+            'storage/sessions',
+            'storage/devdb',
+            'pinker',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function syncFiles(): array
+    {
+        return [
+            ...self::supportSyncFiles(),
+            'app.php',
+            'composer.json',
+            'config/app.config.php',
+            'resource/.gitkeep',
+            'resource/icon.png',
+            'routes/actions.php',
+            'routes/web.php',
+            'schedule.php',
+        ];
+    }
+
+    private static function usesRouterActionsClass(string $contents): bool
+    {
+        return str_contains($contents, 'Router\\Actions')
+            || str_contains($contents, 'Router/Actions')
+            || preg_match('/\bActions::[A-Z_][A-Z0-9_]*\b/', $contents) === 1;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function extractActionConstants(string $contents): array
+    {
+        preg_match_all('/Actions::([A-Z_][A-Z0-9_]*)/', $contents, $matches);
+
+        /** @var list<string> $names */
+        $names = array_values(array_unique($matches[1] ?? []));
+
+        if ($names === []) {
+            return ['HOME' => 'home'];
+        }
+
+        $constants = [];
+
+        foreach ($names as $name) {
+            $constants[$name] = self::guessActionName($name, $contents);
+        }
+
+        return $constants;
+    }
+
+    private static function guessActionName(string $constant, string $contents): string
+    {
+        $pattern = "/action\\s*\\(\\s*Actions::{$constant}\\s*,/";
+
+        if (preg_match($pattern, $contents) === 1) {
+            return strtolower($constant);
+        }
+
+        if (preg_match("/action\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*,/", $contents, $match) === 1) {
+            return (string) ($match[1] ?? strtolower($constant));
+        }
+
+        return strtolower($constant);
+    }
+
+    /**
+     * @param array<string, string> $constants
+     */
+    private static function renderRouterActionsClass(string $package, array $constants): string
+    {
+        $constantLines = '';
+        $allLines = '';
+
+        foreach ($constants as $name => $value) {
+            $safeValue = addslashes($value);
+            $constantLines .= "    public const {$name} = '{$safeValue}';\n\n";
+            $allLines .= "            self::{$name},\n";
+        }
+
+        return <<<PHP
+<?php
+
+namespace App\\{$package}\\Router;
+
+/**
+ * Named route action identifiers for this app.
+ */
+final class Actions
+{
+{$constantLines}    /**
+     * @return list<string>
+     */
+    public static function all(): array
+    {
+        return [
+{$allLines}        ];
+    }
+}
+
+PHP;
     }
 
     /**
@@ -233,7 +444,7 @@ final class ProjectScaffolder
         return false;
     }
 
-    private function ensureMinimalEnv(string $projectRoot, bool $overwrite = false): void
+    private function writeMinimalEnv(string $projectRoot, bool $overwrite = false): void
     {
         $envPath = rtrim(ProjectRoot::normalize($projectRoot), '/\\') . '/.env';
 
@@ -242,34 +453,6 @@ final class ProjectScaffolder
         }
 
         file_put_contents($envPath, "APP_ENV=development\nDB_CONNECTION=devdb\n");
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function syncFiles(): array
-    {
-        return [
-            '.env.example',
-            '.gitignore',
-            '.htaccess',
-            'app.php',
-            'bin/pinx',
-            'composer.json',
-            'config/app.config.php',
-            'index.php',
-            'platform/app-router.config.php',
-            'platform/apps.config.php',
-            'platform/domain.config.php',
-            'platform/launcher/bootstrap.php',
-            'platform/launcher/server.php',
-            'platform/pinoox.config.php',
-            'resource/.gitkeep',
-            'resource/icon.png',
-            'routes/actions.php',
-            'routes/web.php',
-            'schedule.php',
-        ];
     }
 
     private function shouldSkipSkeletonPath(string $relative): bool

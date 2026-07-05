@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Command;
 
+use Pinoox\PinxCli\Support\AppContext;
 use Pinoox\PinxCli\Support\ComposerRunner;
 use Pinoox\PinxCli\Support\Doctor\DoctorRunner;
-use Pinoox\PinxCli\Support\AppContext;
 use Pinoox\PinxCli\Support\ProjectRoot;
+use Pinoox\PinxCli\Support\RepairFinding;
 use Pinoox\PinxCli\Support\SingleAppRepairer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'repair',
-    description: 'Repair the current folder so it can run as a Pinx single-app project',
+    description: 'Diagnose and repair a Pinx single-app project',
 )]
 final class RepairCommand extends Command
 {
@@ -28,9 +29,19 @@ final class RepairCommand extends Command
             ->addOption('package', 'p', InputOption::VALUE_REQUIRED, 'App package name when it cannot be detected')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'App display name for generated files')
             ->addOption('developer', null, InputOption::VALUE_REQUIRED, 'Developer name for generated files')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing template-managed support files')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing Pinx support files')
             ->addOption('install', null, InputOption::VALUE_NONE, 'Run composer install after repairing files')
-            ->addOption('skip-doctor', null, InputOption::VALUE_NONE, 'Skip the final doctor check');
+            ->addOption('skip-doctor', null, InputOption::VALUE_NONE, 'Skip the final doctor check')
+            ->setHelp(
+                <<<'HELP'
+Detects missing support files, runtime folders, registry mapping, route files,
+and broken action routing setup, then fixes only what is actually needed.
+
+Examples:
+  pinx repair
+  pinx repair --install
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,7 +50,7 @@ final class RepairCommand extends Command
         $root = ProjectRoot::normalize(getcwd() ?: '.');
 
         try {
-            $changed = (new SingleAppRepairer())->repair(
+            $result = (new SingleAppRepairer())->repair(
                 projectRoot: $root,
                 package: (string) ($input->getOption('package') ?: ''),
                 displayName: (string) ($input->getOption('name') ?: ''),
@@ -53,11 +64,34 @@ final class RepairCommand extends Command
             return Command::FAILURE;
         }
 
+        $findings = $result['findings'];
+        $changed = $result['changed'];
+        $remaining = $result['remaining'];
+
+        if ($findings !== []) {
+            $io->section('Issues detected');
+            $io->listing(array_map(
+                static fn (RepairFinding $finding): string => $finding->label . ' — ' . $finding->detail,
+                $findings,
+            ));
+        } else {
+            $io->note('No repair issues were detected.');
+        }
+
         if ($changed === []) {
             $io->success('No repair changes were needed.');
         } else {
             $io->success('Repair complete.');
+            $io->section('Fixed');
             $io->listing($changed);
+        }
+
+        if ($remaining !== []) {
+            $io->warning('Some issues could not be repaired automatically:');
+            $io->listing(array_map(
+                static fn (RepairFinding $finding): string => $finding->label . ' — ' . $finding->detail,
+                $remaining,
+            ));
         }
 
         if ($input->getOption('install')) {

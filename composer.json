@@ -1,6 +1,6 @@
 {
   "name": "pinoox/pinx-cli",
-  "version": "1.3.12",
+  "version": "1.4.0",
   "description": "Developer CLI for single-app Pinoox projects — scaffold, dev, build, and release .pinx packages",
   "type": "library",
   "license": "MIT",
@@ -22,5 +22,10 @@
     "pinoox/pinx-inspector": "Install in require-dev to enable the graphical Pinx Inspector dashboard during pinx dev"
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.x-dev"
+    }
+  }
 }

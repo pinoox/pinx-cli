@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use Pinoox\PinxCli\ConsoleApplication;
 use Pinoox\PinxCli\Support\CliErrorRenderer;
+use Pinoox\PinxCli\Support\CliErrorReporting;
 use Pinoox\PinxCli\Support\ConsoleEncoding;
 use Pinoox\PinxCli\Support\PinxVersion;
 
@@ -27,6 +28,7 @@ if (!class_exists(ConsoleApplication::class)) {
 }
 
 ConsoleEncoding::bootUtf8();
+CliErrorReporting::boot(getcwd() ?: null);
 
 set_exception_handler(static function (Throwable $exception): void {
     fwrite(STDERR, (new CliErrorRenderer())->render($exception));

@@ -37,7 +37,7 @@ assert_not_contains('Application.php', $consoleOutput);
 
 $runtimeOutput = $renderer->render(new RuntimeException('Could not detect app package.'));
 
-assert_contains('Pinx failed', $runtimeOutput);
+assert_contains('Pinx Exception', $runtimeOutput);
 assert_contains('Could not detect app package.', $runtimeOutput);
 assert_contains('Run this command inside a Pinx single-app project', $runtimeOutput);
 assert_not_contains('Pinoox Exception', $runtimeOutput);
