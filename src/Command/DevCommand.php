@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\DevApp;
+use Pinoox\PinxCli\Support\Inspector\InspectorServer;
 use Pinoox\PinxCli\Support\PincoreRunner;
 use Pinoox\PinxCli\Support\ProjectRoot;
-use Pinoox\PinxCli\Support\Inspector\InspectorServer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,19 +17,34 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'dev',
-    description: 'Start the development server (and Vite when the app uses a frontend stack)',
+    description: 'Start PHP + Vite dev (HMR) for the app theme',
 )]
 final class DevCommand extends Command
 {
     protected function configure(): void
     {
         $this
-            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Server host')
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Server port')
-            ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'Skip Vite/npm dev')
+            ->setHelp(
+                <<<'HELP'
+Starts PHP serve + Vite HMR for the active app theme (same as pincore `dev` / `fe dev`).
+
+Open the PHP URL shown in the terminal — not the Vite port (:5173).
+Use `pinx serve` (or `php pinoox serve`) when you want built manifest assets only.
+
+Examples:
+  pinx dev
+  pinx dev --port=8080
+  pinx dev --no-frontend
+  pinx dev --network
+HELP
+            )
+            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'PHP serve host')
+            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'PHP serve port')
+            ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'PHP serve only (manifest assets, no Vite)')
+            ->addOption('network', 'N', InputOption::VALUE_NONE, 'Bind PHP + Vite on LAN (0.0.0.0)')
             ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~inspector')
             ->addOption('open-inspector', null, InputOption::VALUE_NONE, 'Open Pinx Inspector in the browser')
-            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start');
+            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after PHP serve starts (--no-frontend only)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -48,7 +63,6 @@ final class DevCommand extends Command
         $runner = new PincoreRunner($root);
         $host = (string) ($input->getOption('host') ?: getenv('SERVER_HOST') ?: '127.0.0.1');
         $port = (string) ($input->getOption('port') ?: getenv('SERVER_PORT') ?: '8000');
-        $stack = $this->frontendStack($root);
         $extraEnv = [];
         $inspectorUrl = 'http://' . $host . ':' . $port . '/~inspector';
 
@@ -72,25 +86,43 @@ final class DevCommand extends Command
             }
         }
 
-        if (!$input->getOption('no-frontend') && $stack !== null && $stack !== 'none' && $stack !== 'twig') {
-            $args = ['fe', $package, 'dev', '--serve-host=' . $host, '--serve-port=' . $port];
-            if ($input->getOption('open')) {
-                $args[] = '--open';
+        if (!$input->getOption('no-frontend') && $this->usesViteFrontend($root)) {
+            $args = [
+                'dev',
+                $package,
+                '--serve-host=' . $host,
+                '--serve-port=' . $port,
+            ];
+
+            if ($input->getOption('network')) {
+                $args[] = '--network';
             }
 
-            $io->note('Starting Vite + PHP server for ' . $package);
+            $extraEnv['PINOOX_VITE_HMR'] = '1';
 
             return $runner->run($args, $output, $extraEnv);
         }
 
         $args = ['serve', '--app=' . $package, '--host=' . $host, '--port=' . $port];
+
         if ($input->getOption('open')) {
             $args[] = '--open';
         }
 
-        $io->note('Starting PHP server for ' . $package . ' at http://' . $host . ':' . $port);
+        $extraEnv['PINOOX_VITE_HMR'] = '0';
 
         return $runner->run($args, $output, $extraEnv);
+    }
+
+    private function usesViteFrontend(string $root): bool
+    {
+        $stack = $this->frontendStack($root);
+
+        if ($stack === null || $stack === '' || $stack === 'none' || $stack === 'twig') {
+            return false;
+        }
+
+        return true;
     }
 
     private function frontendStack(string $root): ?string

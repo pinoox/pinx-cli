@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Command;
 
+use Pinoox\PinxCli\Support\FeForwardOptions;
 use Pinoox\PinxCli\Support\RunsForApp;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -22,24 +23,17 @@ final class FrontendCommand extends Command
 {
     use RunsForApp;
 
-    private const ACTIONS = ['info', 'install', 'build', 'dev', 'run', 'scaffold'];
-
     protected function configure(): void
     {
-        $this
-            ->addArgument('action', InputArgument::REQUIRED, 'Action: ' . implode(', ', self::ACTIONS))
-            ->addOption('theme', 't', InputOption::VALUE_REQUIRED, 'Theme folder name')
-            ->addOption('script', null, InputOption::VALUE_REQUIRED, 'npm script name (run action)')
-            ->addOption('stack', null, InputOption::VALUE_REQUIRED, 'Stack for scaffold: vue, react, twig')
-            ->addOption('serve-host', null, InputOption::VALUE_REQUIRED, 'Dev server host')
-            ->addOption('serve-port', null, InputOption::VALUE_REQUIRED, 'Dev server port')
-            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after start')
-            ->addOption('install', null, InputOption::VALUE_NONE, 'Force npm install')
-            ->setHelp(
+        $this->addArgument('action', InputArgument::REQUIRED, 'Action: ' . implode(', ', FeForwardOptions::ACTIONS));
+        $this->addForwardOptionsFromFe();
+        $this->setHelp(
                 <<<'HELP'
 Examples:
   pinx frontend info
   pinx fe dev
+  pinx fe dev:apps
+  pinx fe watch
   pinx fe build
 
 Dedicated commands:
@@ -47,9 +41,13 @@ Dedicated commands:
   pinx fe:install
   pinx fe:build
   pinx fe:dev
+  pinx fe:watch
+  pinx fe:dev:apps
   pinx fe:scaffold
+
+Dev opens the PHP URL (HMR via vite_tags) — not the Vite port.
 HELP
-            );
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -63,25 +61,44 @@ HELP
 
         $action = strtolower(trim((string) $input->getArgument('action')));
 
-        if (!in_array($action, self::ACTIONS, true)) {
-            $io->error('Unknown action "' . $action . '". Use: ' . implode(', ', self::ACTIONS));
+        if (!in_array($action, FeForwardOptions::ACTIONS, true)) {
+            $io->error('Unknown action "' . $action . '". Use: ' . implode(', ', FeForwardOptions::ACTIONS));
 
             return Command::INVALID;
         }
 
+        $forwardNames = match ($action) {
+            'dev' => FeForwardOptions::devForwardNames(),
+            'dev:apps' => FeForwardOptions::devAppsForwardNames(),
+            'watch' => FeForwardOptions::watchForwardNames(),
+            default => FeForwardOptions::basicForwardNames(),
+        };
+
         $args = array_merge(
             ['fe', $context->package, $action],
-            $this->forwardOptions($input, [
-                'theme',
-                'script',
-                'stack',
-                'serve-host',
-                'serve-port',
-                'open',
-                'install',
-            ]),
+            $this->forwardOptions($input, $forwardNames),
         );
 
-        return $this->runPincore($context, $args, $output);
+        $extraEnv = in_array($action, ['dev', 'dev:apps'], true) ? ['PINOOX_VITE_HMR' => '1'] : [];
+
+        return $this->runPincore($context, $args, $output, $extraEnv);
+    }
+
+    private function addForwardOptionsFromFe(): void
+    {
+        foreach ([
+            ...FeForwardOptions::theme(),
+            ...FeForwardOptions::scaffold(),
+            ...FeForwardOptions::runScript(),
+            ...FeForwardOptions::install(),
+            ...FeForwardOptions::dev(),
+        ] as $definition) {
+            $this->addOption(
+                (string) $definition[0],
+                $definition[1] ?? null,
+                $definition[2] ?? InputOption::VALUE_NONE,
+                $definition[3] ?? '',
+            );
+        }
     }
 }

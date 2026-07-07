@@ -57,6 +57,14 @@ abstract class PincoreActionCommand extends Command
         return $this->defaultArgv;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    protected function extraEnv(AppContext $context, InputInterface $input): array
+    {
+        return [];
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -71,7 +79,7 @@ abstract class PincoreActionCommand extends Command
             $this->forwardOptions($input, $this->forwardOptionNames),
         );
 
-        return $this->runPincore($context, $args, $output);
+        return $this->runPincore($context, $args, $output, $this->extraEnv($context, $input));
     }
 
     protected function addForwardOptions(array $definitions): void

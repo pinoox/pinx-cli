@@ -29,10 +29,11 @@ trait RunsForApp
 
     /**
      * @param list<string> $args
+     * @param array<string, string> $extraEnv
      */
-    protected function runPincore(AppContext $context, array $args, OutputInterface $output): int
+    protected function runPincore(AppContext $context, array $args, OutputInterface $output, array $extraEnv = []): int
     {
-        $code = $this->runner($context)->run($args, $output);
+        $code = $this->runner($context)->run($args, $output, $extraEnv);
 
         return $code === 0 ? Command::SUCCESS : Command::FAILURE;
     }

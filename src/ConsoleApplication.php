@@ -29,10 +29,12 @@ use Pinoox\PinxCli\Command\FilePurgeCommand;
 use Pinoox\PinxCli\Command\FileShowCommand;
 use Pinoox\PinxCli\Command\FileUpdateCommand;
 use Pinoox\PinxCli\Command\FeBuildCommand;
+use Pinoox\PinxCli\Command\FeDevAppsCommand;
 use Pinoox\PinxCli\Command\FeDevCommand;
 use Pinoox\PinxCli\Command\FeInfoCommand;
 use Pinoox\PinxCli\Command\FeInstallCommand;
 use Pinoox\PinxCli\Command\FeScaffoldCommand;
+use Pinoox\PinxCli\Command\FeWatchCommand;
 use Pinoox\PinxCli\Command\ThemeCreateCommand;
 use Pinoox\PinxCli\Command\FrontendCommand;
 use Pinoox\PinxCli\Command\GraphQLDocsCommand;
@@ -204,6 +206,8 @@ final class ConsoleApplication extends Application
             new FeInstallCommand(),
             new FeBuildCommand(),
             new FeDevCommand(),
+            new FeWatchCommand(),
+            new FeDevAppsCommand(),
             new FeScaffoldCommand(),
             new ThemeCreateCommand(),
 

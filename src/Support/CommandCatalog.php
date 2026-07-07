@@ -231,6 +231,9 @@ final class CommandCatalog
             'fe:install' => 'frontend',
             'fe:build' => 'frontend',
             'fe:dev' => 'frontend',
+            'fe:watch' => 'frontend',
+            'fe:dev:apps' => 'frontend',
+            'fe:dev-apps' => 'frontend',
             'fe:scaffold' => 'frontend',
 
             'schedule:list' => 'schedule',
@@ -347,6 +350,8 @@ final class CommandCatalog
             'fe:install' => ['fe:i'],
             'fe:build' => ['fe:b'],
             'fe:dev' => ['fe:d'],
+            'fe:watch' => ['fe:w'],
+            'fe:dev:apps' => ['fe:dev-apps'],
             'fe:scaffold' => ['fe:sc'],
 
             // Schedule
