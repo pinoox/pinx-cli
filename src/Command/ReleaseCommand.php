@@ -76,7 +76,7 @@ final class ReleaseCommand extends Command
         $code = $runner->run($args, $output);
 
         if ($code === 0) {
-            $io->success('Release package built in export/');
+            $io->success('Release package built in pinx/releases/');
         }
 
         return $code === 0 ? Command::SUCCESS : Command::FAILURE;

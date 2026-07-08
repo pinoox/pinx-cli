@@ -464,6 +464,7 @@ PHP;
             '.idea',
             '.pinx-build',
             '.vscode',
+            'pinx',
             'export',
             'node_modules',
             'pinker',
