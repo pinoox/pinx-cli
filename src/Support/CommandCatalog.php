@@ -122,6 +122,7 @@ final class CommandCatalog
             'doctor' => 'project',
             'info' => 'project',
 
+            'serve' => 'develop',
             'dev' => 'develop',
             'inspector' => 'develop',
 
