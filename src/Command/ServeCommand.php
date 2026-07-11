@@ -25,6 +25,7 @@ final class ServeCommand extends PincoreActionCommand
             forwardOptionNames: [
                 'host',
                 'port',
+                'domain',
                 'network',
                 'tries',
                 'no-reload',
@@ -49,6 +50,7 @@ HELP,
         $this->addForwardOptions([
             ['host', null, InputOption::VALUE_OPTIONAL, 'Host address (default 127.0.0.1; use --network for 0.0.0.0)'],
             ['port', null, InputOption::VALUE_OPTIONAL, 'Port number (auto-picks next free port when busy)'],
+            ['domain', null, InputOption::VALUE_OPTIONAL, 'Local hostname for browser URLs (requires hosts file entry)'],
             ['network', 'N', InputOption::VALUE_NONE, 'Listen on 0.0.0.0 and show LAN URL'],
             ['tries', null, InputOption::VALUE_OPTIONAL, 'How many ports to try if the default is busy', 10],
             ['no-reload', null, InputOption::VALUE_NONE, 'Do not restart when .env changes'],
