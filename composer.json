@@ -1,6 +1,6 @@
 {
   "name": "pinoox/pinx-cli",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Developer CLI for single-app Pinoox projects — scaffold, dev, build, and release .pinx packages",
   "type": "library",
   "license": "MIT",
