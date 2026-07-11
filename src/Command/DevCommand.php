@@ -25,6 +25,7 @@ final class DevCommand extends Command
     private const SERVE_FORWARD = [
         'host',
         'port',
+        'domain',
         'network',
         'tries',
         'no-reload',
@@ -63,6 +64,7 @@ Use `pinx serve` (or `php pinoox serve --app=…`) when you want built manifest 
 
 Examples:
   pinx dev
+  pinx dev --domain=pinoox.test
   pinx dev --port=8080
   pinx dev --no-frontend
   pinx dev --network
@@ -71,6 +73,7 @@ HELP
             )
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'PHP serve host (alias for --serve-host)')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'PHP serve port (alias for --serve-port)')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Local hostname (alias for --serve-domain)')
             ->addOption('no-frontend', null, InputOption::VALUE_NONE, 'PHP serve only (manifest assets, no Vite)')
             ->addOption('network', 'N', InputOption::VALUE_NONE, 'Bind PHP + Vite on LAN (0.0.0.0)')
             ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~inspector')
@@ -124,6 +127,12 @@ HELP
 
         if (is_string($port) && trim($port) !== '' && !$input->getOption('serve-port')) {
             $args[] = '--serve-port=' . trim($port);
+        }
+
+        $domain = $input->getOption('domain');
+
+        if (is_string($domain) && trim($domain) !== '' && !$input->getOption('serve-domain')) {
+            $args[] = '--serve-domain=' . trim($domain);
         }
 
         return $args;
