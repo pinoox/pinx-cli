@@ -20,6 +20,7 @@ final class PincoreRunner
      */
     public function run(array $args, OutputInterface $output, array $extraEnv = []): int
     {
+        $args = self::ensureAnsiArgs($args);
         $corePath = CorePath::resolve($this->projectRoot);
         $binary = $this->binary($corePath);
         $command = array_merge(['php'], CliErrorReporting::phpIniArgs($this->projectRoot), [$binary], $args);
@@ -28,30 +29,69 @@ final class PincoreRunner
             'PINOOX_CORE_PATH' => $corePath,
         ], DevApp::pincoreEnv($this->projectRoot), $extraEnv);
 
-        if (CliErrorReporting::shouldDisplayErrors($this->projectRoot)) {
+        if (CliTerminalStyle::supportsColor() || CliErrorReporting::shouldDisplayErrors($this->projectRoot)) {
             $env['FORCE_COLOR'] = '1';
+            $env['CLICOLOR_FORCE'] = '1';
         }
 
-        $process = new Process($command, $this->projectRoot, $env, null, null);
-        $process->setTty(Process::isTtySupported() && $output->isVerbose());
+        foreach (['COLORTERM', 'TERM', 'COLUMNS', 'LINES', 'ANSICON'] as $key) {
+            $value = getenv($key);
 
-        $exitCode = $process->run(static function (string $type, string $buffer): void {
-            $stream = $type === Process::ERR ? STDERR : STDOUT;
-
-            if (is_resource($stream)) {
-                fwrite($stream, $buffer);
-
-                return;
+            if (is_string($value) && $value !== '') {
+                $env[$key] = $value;
             }
+        }
 
-            echo $buffer;
-        });
+        $useTty = Process::isTtySupported()
+            && is_resource(STDOUT)
+            && @stream_isatty(STDOUT)
+            && $output->isVerbose();
+
+        $process = new Process($command, $this->projectRoot, $env, null, null);
+        $process->setTty($useTty);
+
+        if ($useTty) {
+            $exitCode = $process->run();
+        } else {
+            $exitCode = $process->run(static function (string $type, string $buffer): void {
+                $stream = $type === Process::ERR ? STDERR : STDOUT;
+
+                if (is_resource($stream)) {
+                    fwrite($stream, $buffer);
+
+                    return;
+                }
+
+                echo $buffer;
+            });
+        }
 
         if ($exitCode !== 0 && trim($process->getOutput() . $process->getErrorOutput()) === '') {
             $this->renderSilentFailure($exitCode, $args);
         }
 
         return $exitCode;
+    }
+
+    /**
+     * @param list<string> $args
+     * @return list<string>
+     */
+    private static function ensureAnsiArgs(array $args): array
+    {
+        if (in_array('--no-ansi', $args, true) || in_array('--quiet', $args, true) || in_array('-q', $args, true)) {
+            return $args;
+        }
+
+        if (!CliTerminalStyle::supportsColor()) {
+            return $args;
+        }
+
+        if (in_array('--ansi', $args, true)) {
+            return $args;
+        }
+
+        return array_merge(['--ansi'], $args);
     }
 
     public function binary(?string $corePath = null): string

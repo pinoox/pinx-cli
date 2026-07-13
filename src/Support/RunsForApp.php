@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Support;
 
+use Pinoox\PinxCli\Support\AppContext;
+use Pinoox\PinxCli\Support\PlatformContext;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,6 +18,18 @@ trait RunsForApp
         try {
             return AppContext::require();
         } catch (\RuntimeException $e) {
+            $platform = PlatformContext::find();
+
+            if ($platform !== null) {
+                $io->error([
+                    'pinx is for single-app projects. This tree is a multi-app Pinoox platform.',
+                    'Use: ' . $platform->invokeLabel() . ' …',
+                    'Example: ' . $platform->invokeLabel() . ' list',
+                ]);
+
+                return null;
+            }
+
             $io->error($e->getMessage());
 
             return null;

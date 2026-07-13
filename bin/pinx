@@ -7,6 +7,8 @@ use Pinoox\PinxCli\ConsoleApplication;
 use Pinoox\PinxCli\Support\CliErrorRenderer;
 use Pinoox\PinxCli\Support\CliErrorReporting;
 use Pinoox\PinxCli\Support\ConsoleEncoding;
+use Pinoox\PinxCli\Support\PlatformCliForwarder;
+use Pinoox\PinxCli\Support\PlatformContext;
 use Pinoox\PinxCli\Support\PinxVersion;
 
 $autoloadCandidates = [
@@ -40,6 +42,20 @@ $args = array_slice($_SERVER['argv'] ?? [], 1);
 if ($args === ['-v']) {
     fwrite(STDOUT, PinxVersion::label() . PHP_EOL);
     exit(0);
+}
+
+$forcePinx = in_array('--pinx', $args, true);
+
+if ($forcePinx) {
+    $args = array_values(array_filter($args, static fn (string $arg): bool => $arg !== '--pinx'));
+}
+
+if (!$forcePinx && !PlatformContext::isPinxLocalCommand($args)) {
+    $platform = PlatformContext::find();
+
+    if ($platform !== null) {
+        exit(PlatformCliForwarder::forward($platform, $args));
+    }
 }
 
 (new ConsoleApplication())->run();
