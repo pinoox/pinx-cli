@@ -69,6 +69,8 @@ final class DevApp
             return null;
         }
 
+        ProjectAutoload::boot($projectRoot);
+
         $config = require $appFile;
 
         if (!is_array($config)) {

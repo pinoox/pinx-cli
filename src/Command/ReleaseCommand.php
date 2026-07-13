@@ -6,6 +6,7 @@ namespace Pinoox\PinxCli\Command;
 
 use Pinoox\PinxCli\Support\DevApp;
 use Pinoox\PinxCli\Support\PincoreRunner;
+use Pinoox\PinxCli\Support\ProjectAutoload;
 use Pinoox\PinxCli\Support\ProjectRoot;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -42,6 +43,7 @@ final class ReleaseCommand extends Command
         }
 
         $appFile = $root . '/app.php';
+        ProjectAutoload::boot($root);
         $config = require $appFile;
 
         if (!is_array($config)) {

@@ -207,6 +207,8 @@ final class AppContext
             return null;
         }
 
+        ProjectAutoload::boot($dir);
+
         $config = require $appFile;
 
         if (!is_array($config)) {
