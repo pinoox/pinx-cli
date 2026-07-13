@@ -32,8 +32,8 @@ final class DepsUpdateCommand extends PincoreActionCommand
         $this->addForwardOptions([
             ['composer-only', null, InputOption::VALUE_NONE, 'Only Composer targets'],
             ['npm-only', null, InputOption::VALUE_NONE, 'Only npm targets'],
-            ['theme', null, InputOption::VALUE_REQUIRED, 'Theme folder name'],
-            ['all-themes', null, InputOption::VALUE_NONE, 'Include every theme with package.json'],
+            ['theme', null, InputOption::VALUE_REQUIRED, 'Theme folder, context (site, panel, …), or all'],
+            ['all-themes', null, InputOption::VALUE_NONE, 'Every theme context or folder with package.json'],
             ['production', null, InputOption::VALUE_NONE, 'Composer without dev dependencies'],
             ['no-ci', null, InputOption::VALUE_NONE, 'npm install instead of ci'],
             ['plain', null, InputOption::VALUE_NONE, 'Plain output for CI'],

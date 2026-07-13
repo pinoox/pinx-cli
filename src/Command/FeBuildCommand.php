@@ -15,7 +15,7 @@ final class FeBuildCommand extends FeActionCommand
             name: 'fe:build',
             description: 'Build production frontend assets for the theme',
             action: 'build',
-            help: 'Example: pinx fe:build',
+            help: 'Example: pinx fe:build --theme=all (or omit --theme for interactive pick)',
         );
     }
 }

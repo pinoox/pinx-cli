@@ -20,7 +20,7 @@ final class FeForwardOptions
     public static function theme(): array
     {
         return [
-            ['theme', 't', InputOption::VALUE_REQUIRED, 'Theme folder name'],
+            ['theme', 't', InputOption::VALUE_REQUIRED, 'Theme folder, context (site, panel, …), or all'],
         ];
     }
 

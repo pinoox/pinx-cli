@@ -15,7 +15,7 @@ final class FeInstallCommand extends FeActionCommand
             name: 'fe:install',
             description: 'Run npm install for the active theme',
             action: 'install',
-            help: 'Example: pinx fe:install --theme=default',
+            help: 'Example: pinx fe:install --theme=all (or omit --theme for interactive pick)',
         );
     }
 }
