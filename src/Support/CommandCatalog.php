@@ -170,6 +170,7 @@ final class CommandCatalog
 
             'user:create' => 'users',
             'make:user' => 'users',
+            'user:login' => 'users',
             'user:list' => 'users',
             'users' => 'users',
             'user:show' => 'users',
