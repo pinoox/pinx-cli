@@ -92,6 +92,7 @@ use Pinoox\PinxCli\Command\UserCreateCommand;
 use Pinoox\PinxCli\Command\UserDeleteCommand;
 use Pinoox\PinxCli\Command\UserListCommand;
 use Pinoox\PinxCli\Command\UserLoginCommand;
+use Pinoox\PinxCli\Command\UserLogoutCommand;
 use Pinoox\PinxCli\Command\UserPasswordCommand;
 use Pinoox\PinxCli\Command\UserRoleCommand;
 use Pinoox\PinxCli\Command\UserShowCommand;
@@ -160,6 +161,7 @@ final class ConsoleApplication extends Application
             // Users
             new UserCreateCommand(),
             new UserLoginCommand(),
+            new UserLogoutCommand(),
             new UserListCommand(),
             new UserShowCommand(),
             new UserUpdateCommand(),

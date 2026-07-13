@@ -19,7 +19,7 @@ use Symfony\Component\Process\Process;
 
 #[AsCommand(
     name: 'user:login',
-    description: 'Authenticate a user and print a session/JWT token',
+    description: 'Login a user, print browser token, and set PINOOX_LOGIN',
 )]
 final class UserLoginCommand extends Command
 {
@@ -32,16 +32,17 @@ final class UserLoginCommand extends Command
             ->addOption('username', 'u', InputOption::VALUE_REQUIRED, 'Username or email')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Plain password')
             ->addOption('remember', 'r', InputOption::VALUE_NONE, 'Use remember-me lifetime')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Persist PINOOX_LOGIN=package:id:N')
-            ->addOption('clear', null, InputOption::VALUE_NONE, 'Clear PINOOX_LOGIN')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Persist PINOOX_LOGIN (default)')
+            ->addOption('no-env', null, InputOption::VALUE_NONE, 'Do not write PINOOX_LOGIN')
+            ->addOption('clear', null, InputOption::VALUE_NONE, 'Deprecated: use user:logout')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
 Interactive wizard (default), or pass options:
 
   pinx user:login
-  pinx user:login --id=1 --force
-  pinx user:login --clear
+  pinx user:login --id=1
+  pinx user:logout
 
 .env: PINOOX_LOGIN=com_my_app:id:1 (multiple lines OK)
 HELP
@@ -53,12 +54,14 @@ HELP
         $io = new SymfonyStyle($input, $output);
 
         if ($input->getOption('clear')) {
+            $io->warning('user:login --clear is deprecated; use user:logout instead.');
+
             return $this->forwardUserCommand(
                 $io,
                 $input,
                 $output,
-                'user:login',
-                ['clear', 'json'],
+                'user:logout',
+                ['json'],
             );
         }
 
@@ -75,7 +78,7 @@ HELP
 
         $args = array_merge(
             ['user:login', $context->package],
-            $this->forwardOptions($input, ['id', 'username', 'password', 'remember', 'force', 'json']),
+            $this->forwardOptions($input, ['id', 'username', 'password', 'remember', 'force', 'no-env', 'json']),
             ['-n'],
         );
 
@@ -103,39 +106,46 @@ HELP
 
         $io->title('User login');
         $io->text(sprintf('App: <info>%s</info>', $context->package));
-        $io->newLine();
 
         $method = $io->choice(
             'Sign in with',
-            [
-                'id' => 'User id',
-                'login' => 'Username or email',
-                'pick' => 'Pick from user list',
-            ],
+            ['pick' => 'Pick from user list', 'id' => 'User id', 'login' => 'Username or email'],
             'pick',
         );
 
         if ($method === 'pick') {
             $users = $this->loadUsers($context, $io);
             if ($users === []) {
-                $io->error('No users found for this app.');
+                $io->error('No users found.');
 
                 return false;
             }
 
-            $labels = [];
+            $choices = [];
             foreach ($users as $user) {
                 $id = (string) ($user['user_id'] ?? '');
-                $username = (string) ($user['username'] ?? '');
-                $email = (string) ($user['email'] ?? '');
-                $status = (string) ($user['status'] ?? '');
-                $labels[$id] = trim(sprintf('#%s  %s  %s  [%s]', $id, $username, $email !== '' ? $email : '—', $status));
+                if ($id === '') {
+                    continue;
+                }
+                $label = sprintf(
+                    '#%s %s (%s)',
+                    $id,
+                    (string) ($user['username'] ?? ''),
+                    (string) ($user['status'] ?? ''),
+                );
+                $choices[$id] = $label;
             }
 
-            $chosenId = (string) $io->choice('Select user', $labels, array_key_first($labels));
-            $input->setOption('id', $chosenId);
+            if ($choices === []) {
+                $io->error('No users found.');
+
+                return false;
+            }
+
+            $picked = (string) $io->choice('Select user', $choices);
+            $input->setOption('id', $picked);
         } elseif ($method === 'id') {
-            $id = trim((string) $io->ask('User id'));
+            $id = (string) $io->ask('User id');
             if ($id === '' || !ctype_digit($id)) {
                 $io->error('User id must be a positive integer.');
 
@@ -143,14 +153,13 @@ HELP
             }
             $input->setOption('id', $id);
         } else {
-            $login = trim((string) $io->ask('Username or email'));
+            $login = (string) $io->ask('Username or email');
             if ($login === '') {
                 $io->error('Username or email is required.');
 
                 return false;
             }
             $input->setOption('username', $login);
-
             if ((string) ($input->getOption('password') ?? '') === '') {
                 $question = new Question('Password');
                 $question->setHidden(true);
@@ -163,11 +172,6 @@ HELP
                 }
                 $input->setOption('password', $password);
             }
-        }
-
-        $io->section('.env auto-login');
-        if ($io->confirm('Update .env with PINOOX_LOGIN=package:id:… for automatic login?', true)) {
-            $input->setOption('force', true);
         }
 
         return true;
@@ -186,38 +190,28 @@ HELP
             $command,
             $context->root,
             array_merge($_ENV, [
-                'PINOOX_BASE_PATH' => $context->root,
-                'PINOOX_CORE_PATH' => $corePath,
-            ], DevApp::pincoreEnv($context->root)),
-            null,
-            60,
+                'PINOOX_PACKAGE' => $context->package,
+                DevApp::ENV => '1',
+            ]),
         );
+        $process->setTimeout(120);
         $process->run();
 
         if (!$process->isSuccessful()) {
-            $io->warning('Could not load user list; choose id or username instead.');
+            $io->warning(trim($process->getErrorOutput() ?: $process->getOutput()) ?: 'Could not list users.');
 
             return [];
         }
 
-        $stdout = trim($process->getOutput());
-        $start = strpos($stdout, '[');
-        if ($start === false) {
-            return [];
-        }
-
-        $decoded = json_decode(substr($stdout, $start), true);
+        $decoded = json_decode($process->getOutput(), true);
         if (!is_array($decoded)) {
             return [];
         }
 
-        $users = [];
-        foreach ($decoded as $row) {
-            if (is_array($row)) {
-                $users[] = $row;
-            }
+        if (isset($decoded['users']) && is_array($decoded['users'])) {
+            return array_values(array_filter($decoded['users'], 'is_array'));
         }
 
-        return $users;
+        return array_values(array_filter($decoded, 'is_array'));
     }
 }
