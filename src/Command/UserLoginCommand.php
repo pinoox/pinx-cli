@@ -19,7 +19,7 @@ use Symfony\Component\Process\Process;
 
 #[AsCommand(
     name: 'user:login',
-    description: 'Login a user, print browser token, and set PINOOX_LOGIN',
+    description: 'Authenticate a user and print a session/JWT token',
 )]
 final class UserLoginCommand extends Command
 {
@@ -32,19 +32,18 @@ final class UserLoginCommand extends Command
             ->addOption('username', 'u', InputOption::VALUE_REQUIRED, 'Username or email')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Plain password')
             ->addOption('remember', 'r', InputOption::VALUE_NONE, 'Use remember-me lifetime')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Persist PINOOX_LOGIN (default)')
-            ->addOption('no-env', null, InputOption::VALUE_NONE, 'Do not write PINOOX_LOGIN')
-            ->addOption('clear', null, InputOption::VALUE_NONE, 'Deprecated: use user:logout')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Write PINOOX_LOGIN_TOKEN to .env')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
-Interactive wizard (default), or pass options:
+Prints a token for browser apply / cookie / JWT.
+
+With --force, writes PINOOX_LOGIN_TOKEN to .env.
+Does not write PINOOX_LOGIN (optional manual .env only).
 
   pinx user:login
   pinx user:login --id=1
-  pinx user:logout
-
-.env: PINOOX_LOGIN=com_my_app:id:1 (multiple lines OK)
+  pinx user:login --id=1 --force
 HELP
             );
     }
@@ -52,18 +51,6 @@ HELP
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-
-        if ($input->getOption('clear')) {
-            $io->warning('user:login --clear is deprecated; use user:logout instead.');
-
-            return $this->forwardUserCommand(
-                $io,
-                $input,
-                $output,
-                'user:logout',
-                ['json'],
-            );
-        }
 
         if ($this->shouldRunWizard($input)) {
             if (!$this->runWizard($input, $io)) {
@@ -78,7 +65,7 @@ HELP
 
         $args = array_merge(
             ['user:login', $context->package],
-            $this->forwardOptions($input, ['id', 'username', 'password', 'remember', 'force', 'no-env', 'json']),
+            $this->forwardOptions($input, ['id', 'username', 'password', 'remember', 'force', 'json']),
             ['-n'],
         );
 
@@ -127,13 +114,12 @@ HELP
                 if ($id === '') {
                     continue;
                 }
-                $label = sprintf(
+                $choices[$id] = sprintf(
                     '#%s %s (%s)',
                     $id,
                     (string) ($user['username'] ?? ''),
                     (string) ($user['status'] ?? ''),
                 );
-                $choices[$id] = $label;
             }
 
             if ($choices === []) {
@@ -142,8 +128,7 @@ HELP
                 return false;
             }
 
-            $picked = (string) $io->choice('Select user', $choices);
-            $input->setOption('id', $picked);
+            $input->setOption('id', (string) $io->choice('Select user', $choices));
         } elseif ($method === 'id') {
             $id = (string) $io->ask('User id');
             if ($id === '' || !ctype_digit($id)) {

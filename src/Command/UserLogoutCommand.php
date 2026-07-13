@@ -14,7 +14,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'user:logout',
-    description: 'Clear PINOOX_LOGIN auto-login and end the auth session',
+    description: 'End the current auth session (token/cookie)',
 )]
 final class UserLogoutCommand extends Command
 {
@@ -23,37 +23,29 @@ final class UserLogoutCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('all', 'a', InputOption::VALUE_NONE, 'Clear every PINOOX_LOGIN line')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Remove PINOOX_LOGIN_TOKEN from .env')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
-Clear PINOOX_LOGIN for the current app (or all):
+Log out the current auth session.
+
+With --force, removes PINOOX_LOGIN_TOKEN from .env.
+Does not change PINOOX_LOGIN.
 
   pinx user:logout
-  pinx user:logout --all
+  pinx user:logout --force
 HELP
             );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-
-        if ($input->getOption('all')) {
-            $context = $this->requireApp($io);
-            if ($context === null) {
-                return Command::FAILURE;
-            }
-
-            return $this->runPincore($context, ['user:logout', '--all', ...$this->forwardOptions($input, ['json']), '-n'], $output);
-        }
-
         return $this->forwardUserCommand(
-            $io,
+            new SymfonyStyle($input, $output),
             $input,
             $output,
             'user:logout',
-            ['json'],
+            ['force', 'json'],
         );
     }
 }
