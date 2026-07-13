@@ -24,11 +24,18 @@ final class UserLoginCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Login by user id (skips password)')
             ->addOption('username', 'u', InputOption::VALUE_REQUIRED, 'Username or email')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Plain password')
             ->addOption('remember', 'r', InputOption::VALUE_NONE, 'Use remember-me lifetime')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
-            ->setHelp('Example: pinx user:login --username=admin --password=secret');
+            ->setHelp(
+                <<<'HELP'
+Examples:
+  pinx user:login --username=admin --password=secret
+  pinx user:login --id=1 --json
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -41,13 +48,18 @@ final class UserLoginCommand extends Command
             $input,
             $output,
             'user:login',
-            ['username', 'password', 'remember', 'json'],
+            ['id', 'username', 'password', 'remember', 'json'],
         );
     }
 
     private function promptMissingCredentials(InputInterface $input, SymfonyStyle $io): void
     {
         if (!$input->isInteractive()) {
+            return;
+        }
+
+        $id = (string) ($input->getOption('id') ?? '');
+        if ($id !== '') {
             return;
         }
 
