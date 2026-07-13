@@ -4,44 +4,41 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Command;
 
-use Pinoox\PinxCli\Support\AppContext;
-use Pinoox\PinxCli\Support\PincoreActionCommand;
+use Pinoox\PinxCli\Support\DepsPincoreActionCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'deps:status',
-    description: 'Show Composer and npm dependency status for the app',
+    description: 'Show Composer and npm dependency status across the project',
 )]
-final class DepsStatusCommand extends PincoreActionCommand
+final class DepsStatusCommand extends DepsPincoreActionCommand
 {
     public function __construct()
     {
         parent::__construct(
             name: 'deps:status',
-            description: 'Show Composer and npm dependency status for the app',
+            description: 'Show Composer and npm dependency status across the project',
             defaultArgv: [],
-            forwardOptionNames: ['composer-only', 'npm-only', 'theme', 'all-themes'],
-            help: 'Example: pinx deps:status --all-themes',
+            forwardOptionNames: [],
+            help: 'Example: pinx deps:status all',
         );
     }
 
     protected function configureOptions(): void
     {
-        $this->addForwardOptions([
-            ['composer-only', null, InputOption::VALUE_NONE, 'Only Composer targets'],
-            ['npm-only', null, InputOption::VALUE_NONE, 'Only npm targets'],
-            ['theme', null, InputOption::VALUE_REQUIRED, 'Theme folder, context (site, panel, …), or all'],
-            ['all-themes', null, InputOption::VALUE_NONE, 'Every theme context or folder with package.json'],
-        ]);
+        $this->configureDepsStatusOptions();
+    }
+
+    protected function depsAction(): string
+    {
+        return 'status';
     }
 
     /**
      * @return list<string>
      */
-    protected function pincoreArgv(AppContext $context, InputInterface $input): array
+    protected function depsForwardOptionNames(): array
     {
-        return ['deps', 'status', $context->package];
+        return self::depsStatusForwardOptionNames();
     }
 }

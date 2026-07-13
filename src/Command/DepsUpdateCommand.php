@@ -4,48 +4,41 @@ declare(strict_types=1);
 
 namespace Pinoox\PinxCli\Command;
 
-use Pinoox\PinxCli\Support\AppContext;
-use Pinoox\PinxCli\Support\PincoreActionCommand;
+use Pinoox\PinxCli\Support\DepsPincoreActionCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'deps:update',
-    description: 'Update Composer and npm dependencies for the app',
+    description: 'Update Composer and npm dependencies across the project',
 )]
-final class DepsUpdateCommand extends PincoreActionCommand
+final class DepsUpdateCommand extends DepsPincoreActionCommand
 {
     public function __construct()
     {
         parent::__construct(
             name: 'deps:update',
-            description: 'Update Composer and npm dependencies for the app',
+            description: 'Update Composer and npm dependencies across the project',
             defaultArgv: [],
-            forwardOptionNames: ['composer-only', 'npm-only', 'theme', 'all-themes', 'production', 'no-ci', 'plain', 'continue-on-error'],
-            help: 'Example: pinx deps:update',
+            forwardOptionNames: [],
+            help: 'Example: pinx deps:update com_my_shop',
         );
     }
 
     protected function configureOptions(): void
     {
-        $this->addForwardOptions([
-            ['composer-only', null, InputOption::VALUE_NONE, 'Only Composer targets'],
-            ['npm-only', null, InputOption::VALUE_NONE, 'Only npm targets'],
-            ['theme', null, InputOption::VALUE_REQUIRED, 'Theme folder, context (site, panel, …), or all'],
-            ['all-themes', null, InputOption::VALUE_NONE, 'Every theme context or folder with package.json'],
-            ['production', null, InputOption::VALUE_NONE, 'Composer without dev dependencies'],
-            ['no-ci', null, InputOption::VALUE_NONE, 'npm install instead of ci'],
-            ['plain', null, InputOption::VALUE_NONE, 'Plain output for CI'],
-            ['continue-on-error', null, InputOption::VALUE_NONE, 'Continue when a step fails'],
-        ]);
+        $this->configureDepsInstallUpdateOptions();
+    }
+
+    protected function depsAction(): string
+    {
+        return 'update';
     }
 
     /**
      * @return list<string>
      */
-    protected function pincoreArgv(AppContext $context, InputInterface $input): array
+    protected function depsForwardOptionNames(): array
     {
-        return ['deps', 'update', $context->package];
+        return self::depsForwardOptionNames();
     }
 }
