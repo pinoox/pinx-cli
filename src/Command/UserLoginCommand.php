@@ -32,8 +32,8 @@ final class UserLoginCommand extends Command
             ->addOption('username', 'u', InputOption::VALUE_REQUIRED, 'Username or email')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Plain password')
             ->addOption('remember', 'r', InputOption::VALUE_NONE, 'Use remember-me lifetime')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Persist token to PINOOX_LOGIN_TOKEN')
-            ->addOption('clear', null, InputOption::VALUE_NONE, 'Clear PINOOX_LOGIN_TOKEN')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Persist PINOOX_LOGIN=package:id:N')
+            ->addOption('clear', null, InputOption::VALUE_NONE, 'Clear PINOOX_LOGIN')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
@@ -42,6 +42,8 @@ Interactive wizard (default), or pass options:
   pinx user:login
   pinx user:login --id=1 --force
   pinx user:login --clear
+
+.env: PINOOX_LOGIN=com_my_app:id:1 (multiple lines OK)
 HELP
             );
     }
@@ -164,7 +166,7 @@ HELP
         }
 
         $io->section('.env auto-login');
-        if ($io->confirm('Update .env with PINOOX_LOGIN_TOKEN for automatic login?', true)) {
+        if ($io->confirm('Update .env with PINOOX_LOGIN=package:id:… for automatic login?', true)) {
             $input->setOption('force', true);
         }
 
