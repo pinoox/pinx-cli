@@ -24,20 +24,63 @@ final class UserDeleteCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('user', InputArgument::REQUIRED, 'User id, username, or email')
+            ->addArgument('user', InputArgument::OPTIONAL, 'User id, username, email, mobile, or personal id')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip confirmation')
             ->addOption('revoke-sessions', null, InputOption::VALUE_NONE, 'Revoke tokens before delete')
-            ->setHelp('Example: pinx user:delete demo --force');
+            ->setHelp(
+                <<<'HELP'
+Delete a user. Run without arguments for an interactive wizard.
+
+Find users by id, username, email, mobile, or personal id.
+
+Examples:
+  pinx user:delete
+  pinx user:delete demo --force
+  pinx user:delete 09120000000 --revoke-sessions
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
+        $context = $this->requireApp($io);
+        if ($context === null) {
+            return Command::FAILURE;
+        }
+
+        if ($input->isInteractive() && trim((string) ($input->getArgument('user') ?? '')) === '') {
+            $io->title('Delete user');
+            $io->text('Find a user by id, username, email, mobile, or personal id.');
+            $io->newLine();
+        }
+
+        $userId = $this->resolveForwardUserId($io, $input, $output, $context, 'Delete user');
+        if ($userId === null) {
+            return Command::FAILURE;
+        }
+
+        if (!$input->getOption('force')) {
+            if (!$input->isInteractive()) {
+                $io->error('Pass --force to delete in non-interactive mode.');
+
+                return Command::FAILURE;
+            }
+            if (!$io->confirm(sprintf('Delete user #%s?', $userId), false)) {
+                $io->warning('Delete canceled.');
+
+                return Command::SUCCESS;
+            }
+            $input->setOption('force', true);
+        }
+
         return $this->forwardUserCommand(
-            new SymfonyStyle($input, $output),
+            $io,
             $input,
             $output,
             'user:delete',
             ['force', 'revoke-sessions'],
+            $userId,
         );
     }
 }

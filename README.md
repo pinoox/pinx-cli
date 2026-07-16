@@ -309,12 +309,12 @@ pinx list --raw
 |---------|---------|-------------|
 | `user:create` | `make:user` | Create a user (`--username`, `--password`, `--email`, `--role`) |
 | `user:list` | `users` | List users (`--status`, `--json`) |
-| `user:show` | — | Show one user |
-| `user:update` | — | Update profile fields |
+| `user:show` | — | Show one user (wizard; id/username/email/mobile/personal_id) |
+| `user:update` | — | Update profile fields (wizard) |
 | `user:status` | — | Set status (`active`, `inactive`, `suspend`, `pending`) |
-| `user:password` | `user:passwd` | Admin password reset (`--revoke-sessions`) |
-| `user:delete` | — | Delete user (`--force`) |
-| `user:role` | `user:role:assign` | Attach or sync roles (`--role`, `--sync`) |
+| `user:password` | `user:passwd` | Admin password reset (wizard; `--revoke-sessions`) |
+| `user:delete` | — | Delete user (wizard; `--force`) |
+| `user:role` | `user:role:assign` | Attach or sync roles (`--role`, `--sync`, `--list`) |
 
 ### Roles & permissions
 

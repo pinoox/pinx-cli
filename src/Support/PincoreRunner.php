@@ -45,7 +45,8 @@ final class PincoreRunner
         $useTty = Process::isTtySupported()
             && is_resource(STDOUT)
             && @stream_isatty(STDOUT)
-            && $output->isVerbose();
+            && !in_array('-n', $args, true)
+            && !in_array('--no-interaction', $args, true);
 
         $process = new Process($command, $this->projectRoot, $env, null, null);
         $process->setTty($useTty);
