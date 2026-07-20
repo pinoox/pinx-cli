@@ -45,10 +45,15 @@ use Pinoox\PinxCli\Command\ListCommand;
 use Pinoox\PinxCli\Command\MakeCommand;
 use Pinoox\PinxCli\Command\MigrateCommand;
 use Pinoox\PinxCli\Command\MigrateCreateCommand;
+use Pinoox\PinxCli\Command\MigrateDropCommand;
+use Pinoox\PinxCli\Command\MigrateFreshCommand;
 use Pinoox\PinxCli\Command\MigratePlatformCommand;
+use Pinoox\PinxCli\Command\MigrateResetCommand;
 use Pinoox\PinxCli\Command\MigrateRollbackCommand;
 use Pinoox\PinxCli\Command\MigrateStatusCommand;
 use Pinoox\PinxCli\Command\NewCommand;
+use Pinoox\PinxCli\Command\PatchCreateCommand;
+use Pinoox\PinxCli\Command\PatchResetCommand;
 use Pinoox\PinxCli\Command\PatchRollbackCommand;
 use Pinoox\PinxCli\Command\PatchRunCommand;
 use Pinoox\PinxCli\Command\PatchStatusCommand;
@@ -132,6 +137,9 @@ final class ConsoleApplication extends Application
             new MigrateStatusCommand(),
             new MigrateCreateCommand(),
             new MigratePlatformCommand(),
+            new MigrateResetCommand(),
+            new MigrateDropCommand(),
+            new MigrateFreshCommand(),
             new SeederRunCommand(),
             new DbListCommand(),
             new DbShowCommand(),
@@ -147,6 +155,8 @@ final class ConsoleApplication extends Application
             new PatchRunCommand(),
             new PatchStatusCommand(),
             new PatchRollbackCommand(),
+            new PatchResetCommand(),
+            new PatchCreateCommand(),
 
             // Build & release
             new BuildCommand(),

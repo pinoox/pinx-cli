@@ -26,6 +26,9 @@ final class MigrateCommand extends Command
             ->addOption('devdb', null, InputOption::VALUE_NONE, 'Run migrations using Pinoox DevDB in local development')
             ->addOption('preview', null, InputOption::VALUE_NONE, 'Preview DevDB schema metadata without writing project DevDB files')
             ->addOption('platform', null, InputOption::VALUE_NONE, 'Also run migrate:platform before the app')
+            ->addOption('reset', 'r', InputOption::VALUE_NONE, 'Rollback all app migration batches via down()')
+            ->addOption('fresh', null, InputOption::VALUE_NONE, 'Drop app tables, clear history, then migrate')
+            ->addOption('refresh', null, InputOption::VALUE_NONE, 'Rollback all batches via down(), then migrate again')
             ->setHelp(
                 <<<'HELP'
 Run pending migrations for the detected app package.
@@ -35,11 +38,15 @@ Related commands:
   pinx migrate:rb      (migrate:rollback)
   pinx migrate:cr <name>  (migrate:create)
   pinx migrate:pl      (migrate:platform)
+  pinx migrate:reset
+  pinx migrate:drop
+  pinx migrate:fresh
 
 Examples:
   pinx migrate         (migrate:run)
   pinx migrate:run
   pinx migrate --platform
+  pinx migrate --fresh
 HELP
             );
     }
@@ -56,8 +63,11 @@ HELP
         $runner = $this->runner($context);
         $useDevDb = (bool) $input->getOption('devdb');
         $preview = (bool) $input->getOption('preview');
+        $reset = (bool) $input->getOption('reset');
+        $fresh = (bool) $input->getOption('fresh');
+        $refresh = (bool) $input->getOption('refresh');
 
-        if ($input->getOption('platform')) {
+        if ($input->getOption('platform') && !$reset && !$fresh && !$refresh) {
             $platformArgs = ['migrate', 'platform', '-n'];
             if ($useDevDb) {
                 $platformArgs[] = '--devdb';
@@ -77,6 +87,13 @@ HELP
         }
         if ($preview) {
             $args[] = '--preview';
+        }
+        if ($fresh) {
+            $args[] = '--fresh';
+        } elseif ($refresh) {
+            $args[] = '--refresh';
+        } elseif ($reset) {
+            $args[] = '--reset';
         }
 
         return $runner->run($args, $output) === 0

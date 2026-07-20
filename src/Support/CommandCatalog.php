@@ -132,6 +132,9 @@ final class CommandCatalog
             'migrate:status' => 'database',
             'migrate:create' => 'database',
             'migrate:platform' => 'database',
+            'migrate:reset' => 'database',
+            'migrate:drop' => 'database',
+            'migrate:fresh' => 'database',
             'seeder:run' => 'database',
             'seed' => 'database',
 
@@ -158,6 +161,9 @@ final class CommandCatalog
             'patch:run' => 'patches',
             'patch:status' => 'patches',
             'patch:rollback' => 'patches',
+            'patch:reset' => 'patches',
+            'patch:create' => 'patches',
+            'patch:clear' => 'patches',
 
             'build' => 'build',
             'release' => 'build',
@@ -300,8 +306,13 @@ final class CommandCatalog
             'migrate:rollback' => ['migrate:rb'],
             'migrate:create' => ['migrate:cr'],
             'migrate:platform' => ['migrate:pl'],
+            'migrate:reset' => ['migrate:rs'],
+            'migrate:drop' => ['migrate:dp'],
+            'migrate:fresh' => ['migrate:fr'],
             'patch:status' => ['patch:st'],
             'patch:rollback' => ['patch:rb'],
+            'patch:reset' => ['patch:rs'],
+            'patch:create' => ['patch:cr'],
 
             'db:list' => ['databases'],
             'db:show' => ['database:show'],

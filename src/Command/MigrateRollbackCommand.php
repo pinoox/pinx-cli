@@ -12,7 +12,7 @@ use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'migrate:rollback',
-    description: 'Rollback the last batch of app migrations',
+    description: 'Rollback app migration batches',
 )]
 final class MigrateRollbackCommand extends PincoreActionCommand
 {
@@ -20,16 +20,25 @@ final class MigrateRollbackCommand extends PincoreActionCommand
     {
         parent::__construct(
             name: 'migrate:rollback',
-            description: 'Rollback the last batch of app migrations',
+            description: 'Rollback app migration batches',
             defaultArgv: [],
-            forwardOptionNames: ['ignore-fk'],
-            help: 'Examples: pinx migrate:rollback | pinx migrate:rollback --ignore-fk',
+            forwardOptionNames: ['ignore-fk', 'step', 'all'],
+            help: <<<'HELP'
+Examples:
+  pinx migrate:rollback
+  pinx migrate:rollback --step=2
+  pinx migrate:rollback --all
+  pinx migrate:rollback --ignore-fk
+HELP,
         );
     }
 
     protected function configureOptions(): void
     {
-        $this->addOption('ignore-fk', 'f', InputOption::VALUE_NONE, 'Disable foreign key checks during rollback');
+        $this
+            ->addOption('step', null, InputOption::VALUE_REQUIRED, 'Number of batches to rollback', '1')
+            ->addOption('all', 'a', InputOption::VALUE_NONE, 'Rollback every executed batch')
+            ->addOption('ignore-fk', 'f', InputOption::VALUE_NONE, 'Disable foreign key checks during rollback');
     }
 
     /**

@@ -282,9 +282,12 @@ pinx list --raw
 
 | Command | Aliases | Description |
 |---------|---------|-------------|
-| `migrate:run` | `migrate` | Run app migrations (`--platform` runs platform first) |
+| `migrate:run` | `migrate` | Run app migrations (`--platform`, `--reset`, `--fresh`, `--refresh`) |
 | `migrate:status` | `migrate:st` | Migration status |
-| `migrate:rollback` | `migrate:rb` | Rollback last batch (`--ignore-fk`) |
+| `migrate:rollback` | `migrate:rb` | Rollback batches (`--step`, `--all`, `--ignore-fk`) |
+| `migrate:reset` | `migrate:rs` | Rollback all batches via `down()` |
+| `migrate:drop` | `migrate:dp` | Drop app tables and clear migration history |
+| `migrate:fresh` | `migrate:fr` | Drop tables then re-run all migrations |
 | `migrate:create <name>` | `migrate:cr` | Create migration file |
 | `migrate:platform` | `migrate:pl` | Platform migrations only |
 | `seeder:run` | `seed` | Run seeders (`-c` class) |
@@ -301,7 +304,9 @@ pinx list --raw
 |---------|---------|-------------|
 | `patch:run` | `patch` | Run pending patches |
 | `patch:status` | `patch:st` | Patch status |
-| `patch:rollback` | `patch:rb` | Rollback last patch batch |
+| `patch:rollback` | `patch:rb` | Rollback latest / named patch (`--step`, `--all`) |
+| `patch:reset` | `patch:rs` | Rollback all rollbackable patches (`--clear`) |
+| `patch:create <name>` | `patch:cr` | Create a patch file |
 
 ### Users
 
