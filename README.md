@@ -268,7 +268,7 @@ pinx list --raw
 |---------|---------|-------------|
 | `new` | — | Scaffold from `pinoox/app` (wizard or flags) |
 | `init` | — | Initialize the current directory (`--force` to overwrite) |
-| `setup` | — | DB: platform + app migrate, seed, and patch |
+| `setup` | — | Full setup: deps, migrate, seed, patch (`--db-only`, `--skip-*`, `--yes`) |
 | `doctor` | `dr` | Health check — `--json`, `--skip-db`, `--skip-frontend` |
 | `info` | `inf` | Show metadata from `app.php` |
 
