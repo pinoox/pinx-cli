@@ -34,6 +34,7 @@ final class UserCreateCommand extends Command
             ->addOption('group-key', null, InputOption::VALUE_REQUIRED, 'Group key')
             ->addOption('status', 's', InputOption::VALUE_REQUIRED, 'Status: active, inactive, suspend, pending')
             ->addOption('role', 'r', InputOption::VALUE_REQUIRED, 'Attach role by role_key')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp('Example: pinx user:create --username=admin --password=secret --email=admin@example.com');
     }
 
@@ -47,7 +48,7 @@ final class UserCreateCommand extends Command
             $input,
             $output,
             'user:create',
-            ['username', 'password', 'email', 'fname', 'lname', 'mobile', 'group-key', 'status', 'role'],
+            ['username', 'password', 'email', 'fname', 'lname', 'mobile', 'group-key', 'status', 'role', 'json'],
         );
     }
 

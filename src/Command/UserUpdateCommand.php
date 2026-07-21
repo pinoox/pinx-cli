@@ -36,6 +36,7 @@ final class UserUpdateCommand extends Command
             ->addOption('group-key', null, InputOption::VALUE_REQUIRED, 'Group key')
             ->addOption('status', 's', InputOption::VALUE_REQUIRED, 'Status: active, inactive, suspend, pending')
             ->addOption('personal-id', null, InputOption::VALUE_REQUIRED, 'Personal ID')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
 Update user profile fields. Run without a user argument to pick interactively.
@@ -77,7 +78,7 @@ HELP
             $input,
             $output,
             'user:update',
-            ['set', 'meta', 'metadata', 'username', 'email', 'fname', 'lname', 'mobile', 'group-key', 'status', 'personal-id'],
+            ['set', 'meta', 'metadata', 'username', 'email', 'fname', 'lname', 'mobile', 'group-key', 'status', 'personal-id', 'json'],
             $userId,
             nonInteractive: $hasFieldOptions || !$input->isInteractive(),
         );

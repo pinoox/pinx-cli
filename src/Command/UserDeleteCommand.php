@@ -27,6 +27,7 @@ final class UserDeleteCommand extends Command
             ->addArgument('user', InputArgument::OPTIONAL, 'User id, username, email, mobile, or personal id')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip confirmation')
             ->addOption('revoke-sessions', null, InputOption::VALUE_NONE, 'Revoke tokens before delete')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
 Delete a user. Run without arguments for an interactive wizard.
@@ -79,7 +80,7 @@ HELP
             $input,
             $output,
             'user:delete',
-            ['force', 'revoke-sessions'],
+            ['force', 'revoke-sessions', 'json'],
             $userId,
         );
     }

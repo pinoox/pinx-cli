@@ -28,6 +28,7 @@ final class UserPasswordCommand extends Command
             ->addArgument('user', InputArgument::OPTIONAL, 'User id, username, email, mobile, or personal id')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'New plain password')
             ->addOption('revoke-sessions', null, InputOption::VALUE_NONE, 'Revoke active tokens after reset')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Output JSON')
             ->setHelp(
                 <<<'HELP'
 Reset a user password. Run without arguments for an interactive wizard.
@@ -88,7 +89,7 @@ HELP
             $input,
             $output,
             'user:password',
-            ['password', 'revoke-sessions'],
+            ['password', 'revoke-sessions', 'json'],
             $userId,
         );
     }
