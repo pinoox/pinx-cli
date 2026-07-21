@@ -124,6 +124,7 @@ final class CommandCatalog
 
             'serve' => 'develop',
             'dev' => 'develop',
+            'share' => 'develop',
             'inspector' => 'develop',
 
             'migrate' => 'database',

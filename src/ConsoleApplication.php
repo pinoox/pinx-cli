@@ -23,6 +23,7 @@ use Pinoox\PinxCli\Command\DevDbSeedCommand;
 use Pinoox\PinxCli\Command\DevDbStatusCommand;
 use Pinoox\PinxCli\Command\ServeCommand;
 use Pinoox\PinxCli\Command\DevCommand;
+use Pinoox\PinxCli\Command\ShareCommand;
 use Pinoox\PinxCli\Command\DoctorCommand;
 use Pinoox\PinxCli\Command\FileDeleteCommand;
 use Pinoox\PinxCli\Command\FileListCommand;
@@ -129,6 +130,7 @@ final class ConsoleApplication extends Application
             // Development
             new ServeCommand(),
             new DevCommand(),
+            new ShareCommand(),
             new InspectorCommand(),
 
             // Database

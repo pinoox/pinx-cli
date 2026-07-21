@@ -32,6 +32,10 @@ final class DevCommand extends Command
         'no-inspector',
         'open-inspector',
         'open',
+        'share',
+        'share-password',
+        'share-expire',
+        'share-provider',
     ];
 
     /** @var list<string> */
@@ -50,6 +54,10 @@ final class DevCommand extends Command
         'env-file',
         'no-inspector',
         'open-inspector',
+        'share',
+        'share-password',
+        'share-expire',
+        'share-provider',
     ];
 
     protected function configure(): void
@@ -69,6 +77,10 @@ Examples:
   pinx dev --no-frontend
   pinx dev --network
   pinx dev --theme=panel
+  pinx dev --share
+  pinx dev -N --share
+  pinx dev --share --share-password=123456
+  pinx dev --share --share-expire=2h
 HELP
             )
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'PHP serve host (alias for --serve-host)')
@@ -78,7 +90,11 @@ HELP
             ->addOption('network', 'N', InputOption::VALUE_NONE, 'Bind PHP + Vite on LAN (0.0.0.0)')
             ->addOption('no-inspector', null, InputOption::VALUE_NONE, 'Disable Pinx Inspector on /~inspector')
             ->addOption('open-inspector', null, InputOption::VALUE_NONE, 'Open Pinx Inspector in the browser')
-            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after PHP serve starts (--no-frontend only)');
+            ->addOption('open', 'o', InputOption::VALUE_NONE, 'Open browser after PHP serve starts (--no-frontend only)')
+            ->addOption('share', null, InputOption::VALUE_NONE, 'Expose the server via a public tunnel (Cloudflare, Pinggy, ngrok, …)')
+            ->addOption('share-provider', null, InputOption::VALUE_OPTIONAL, 'Tunnel provider: auto, pinggy, serveo, cloudflare, localhostrun, bore, tunnelmole, ngrok, localtunnel')
+            ->addOption('share-password', null, InputOption::VALUE_OPTIONAL, 'Protect the share URL with a password')
+            ->addOption('share-expire', null, InputOption::VALUE_OPTIONAL, 'Auto-stop the tunnel after a duration (e.g. 2h, 30m, 60s)');
 
         $this->addForwardOptions([
             ...FeForwardOptions::theme(),

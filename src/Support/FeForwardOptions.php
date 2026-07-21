@@ -75,6 +75,10 @@ final class FeForwardOptions
             ['fix-vite', null, InputOption::VALUE_NONE, 'Auto-wire vite.config.js with @pinooxhq/vite-plugin'],
             ['env-file', null, InputOption::VALUE_REQUIRED, 'Theme env file for dev auto-setup'],
             ['apps', null, InputOption::VALUE_REQUIRED, 'Comma-separated packages for dev:apps'],
+            ['share', null, InputOption::VALUE_NONE, 'Expose the server via a public tunnel (Cloudflare, Pinggy, ngrok, …)'],
+            ['share-provider', null, InputOption::VALUE_OPTIONAL, 'Tunnel provider: auto, pinggy, serveo, cloudflare, localhostrun, bore, tunnelmole, ngrok, localtunnel'],
+            ['share-password', null, InputOption::VALUE_OPTIONAL, 'Protect the share URL with a password'],
+            ['share-expire', null, InputOption::VALUE_OPTIONAL, 'Auto-stop the tunnel after a duration (e.g. 2h, 30m, 60s)'],
         ];
     }
 
@@ -108,6 +112,10 @@ final class FeForwardOptions
             'verbose-vite',
             'fix-vite',
             'env-file',
+            'share',
+            'share-provider',
+            'share-password',
+            'share-expire',
         ];
     }
 
