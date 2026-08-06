@@ -261,6 +261,10 @@ final class ProjectScaffolder
     {
         return [
             'storage',
+            'storage/local',
+            'storage/public',
+            'storage/tmp',
+            'storage/database',
             'storage/logs',
             'storage/sessions',
             'storage/devdb',
