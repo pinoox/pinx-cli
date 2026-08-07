@@ -28,14 +28,14 @@ final class PincoreRunner
             return 1;
         }
 
-        $args = self::ensureAnsiArgs($args);
+        $args = self::ensureAnsiArgs(ConsoleEncoding::withAsciiUiArgs($args));
         $binary = $this->binary($corePath);
         $command = array_merge(['php'], CliErrorReporting::phpIniArgs($this->projectRoot), [$binary], $args);
         $env = array_merge($_ENV, [
             'PINOOX_BASE_PATH' => $this->projectRoot,
             'PINOOX_CORE_PATH' => $corePath,
             'PINOOX_CLI_INVOKE' => 'pinx',
-        ], DevApp::pincoreEnv($this->projectRoot), $extraEnv);
+        ], DevApp::pincoreEnv($this->projectRoot), ConsoleEncoding::processEnv(), $extraEnv);
 
         if (CliTerminalStyle::supportsColor() || CliErrorReporting::shouldDisplayErrors($this->projectRoot)) {
             $env['FORCE_COLOR'] = '1';
@@ -56,6 +56,8 @@ final class PincoreRunner
             && !in_array('-n', $args, true)
             && !in_array('--no-interaction', $args, true);
 
+        ConsoleEncoding::ensureUtf8();
+
         $process = new Process($command, $this->projectRoot, $env, null, null);
         $process->setTty($useTty);
 
@@ -63,6 +65,7 @@ final class PincoreRunner
             $exitCode = $process->run();
         } else {
             $exitCode = $process->run(static function (string $type, string $buffer): void {
+                ConsoleEncoding::ensureUtf8();
                 $stream = $type === Process::ERR ? STDERR : STDOUT;
 
                 if (is_resource($stream)) {
@@ -74,6 +77,9 @@ final class PincoreRunner
                 echo $buffer;
             });
         }
+
+        // Symfony Process pipe I/O on Windows can reset the console codepage.
+        ConsoleEncoding::ensureUtf8();
 
         if ($exitCode !== 0 && trim($process->getOutput() . $process->getErrorOutput()) === '') {
             $this->renderSilentFailure($exitCode, $args);

@@ -15,7 +15,7 @@ final class PlatformCliForwarder
     {
         $requestedArgs = $argvArgs;
         $argvArgs = PlatformCommandArguments::normalize($argvArgs);
-        $argvArgs = self::ensureAnsiArgs($argvArgs);
+        $argvArgs = self::ensureAnsiArgs(ConsoleEncoding::withAsciiUiArgs($argvArgs));
 
         $command = array_merge(
             ['php'],
@@ -29,14 +29,20 @@ final class PlatformCliForwarder
         $env = self::buildEnv($platform);
         $useTty = self::shouldUseTty($argvArgs);
 
+        ConsoleEncoding::ensureUtf8();
+
         $process = new Process($command, $platform->root, $env, null, null);
         $process->setTty($useTty);
 
         if ($useTty) {
-            return $process->run();
+            $exitCode = $process->run();
+            ConsoleEncoding::ensureUtf8();
+
+            return $exitCode;
         }
 
-        return $process->run(static function (string $type, string $buffer): void {
+        $exitCode = $process->run(static function (string $type, string $buffer): void {
+            ConsoleEncoding::ensureUtf8();
             $stream = $type === Process::ERR ? STDERR : STDOUT;
 
             if (is_resource($stream)) {
@@ -47,6 +53,10 @@ final class PlatformCliForwarder
 
             echo $buffer;
         });
+
+        ConsoleEncoding::ensureUtf8();
+
+        return $exitCode;
     }
 
     /**
@@ -80,7 +90,7 @@ final class PlatformCliForwarder
             'PINOOX_CORE_PATH' => CorePath::resolve($platform->root),
             'PINX_FORWARDED' => '1',
             'PINOOX_CLI_INVOKE' => 'pinx',
-        ], DevApp::pincoreEnv($platform->root));
+        ], DevApp::pincoreEnv($platform->root), ConsoleEncoding::processEnv());
 
         if (CliTerminalStyle::supportsColor()) {
             $env['FORCE_COLOR'] = '1';
