@@ -37,8 +37,8 @@ final class DepsStatusCommand extends DepsPincoreActionCommand
     /**
      * @return list<string>
      */
-    protected function depsForwardOptionNames(): array
+    protected function forwardedDepsOptionNames(): array
     {
-        return self::depsStatusForwardOptionNames();
+        return self::depsStatusOptionNames();
     }
 }

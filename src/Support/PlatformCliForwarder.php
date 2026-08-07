@@ -13,6 +13,8 @@ final class PlatformCliForwarder
      */
     public static function forward(PlatformContext $platform, array $argvArgs): int
     {
+        $requestedArgs = $argvArgs;
+        $argvArgs = PlatformCommandArguments::normalize($argvArgs);
         $argvArgs = self::ensureAnsiArgs($argvArgs);
 
         $command = array_merge(
@@ -22,7 +24,7 @@ final class PlatformCliForwarder
             $argvArgs,
         );
 
-        self::noteForward($platform, $argvArgs);
+        self::noteForward($platform, $requestedArgs, $argvArgs);
 
         $env = self::buildEnv($platform);
         $useTty = self::shouldUseTty($argvArgs);
@@ -77,6 +79,7 @@ final class PlatformCliForwarder
             'PINOOX_BASE_PATH' => $platform->root,
             'PINOOX_CORE_PATH' => CorePath::resolve($platform->root),
             'PINX_FORWARDED' => '1',
+            'PINOOX_CLI_INVOKE' => 'pinx',
         ], DevApp::pincoreEnv($platform->root));
 
         if (CliTerminalStyle::supportsColor()) {
@@ -116,15 +119,16 @@ final class PlatformCliForwarder
     }
 
     /**
-     * @param list<string> $argvArgs
+     * @param list<string> $requestedArgs
+     * @param list<string> $forwardedArgs
      */
-    private static function noteForward(PlatformContext $platform, array $argvArgs): void
+    private static function noteForward(PlatformContext $platform, array $requestedArgs, array $forwardedArgs): void
     {
         if (getenv('PINX_FORWARDED') === '1') {
             return;
         }
 
-        if (self::hasQuietFlag($argvArgs)) {
+        if (self::hasQuietFlag($forwardedArgs)) {
             return;
         }
 
@@ -133,17 +137,35 @@ final class PlatformCliForwarder
         }
 
         $style = new CliTerminalStyle();
+        $forwardedArgs = array_values(array_filter(
+            $forwardedArgs,
+            static fn (string $arg): bool => $arg !== '--ansi',
+        ));
+        $requested = 'pinx ' . self::formatArgs($requestedArgs);
+        $forwarded = $platform->invokeLabel() . ' ' . self::formatArgs($forwardedArgs);
 
         fwrite(
             STDERR,
             PHP_EOL
-            . '  '
-            . $style->color('>', '1;33')
-            . ' '
-            . $style->color('Forward multi-app platform · php pinoox', '1;36')
+            . $style->section('  Pinoox platform')
+            . PHP_EOL
+            . $style->field('Command', $requested)
+            . PHP_EOL
+            . $style->field('Running', $forwarded, '1;32')
             . PHP_EOL
             . PHP_EOL,
         );
+    }
+
+    /**
+     * @param list<string> $args
+     */
+    private static function formatArgs(array $args): string
+    {
+        return implode(' ', array_map(
+            static fn (string $arg): string => str_contains($arg, ' ') ? '"' . $arg . '"' : $arg,
+            $args,
+        ));
     }
 
     /**

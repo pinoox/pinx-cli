@@ -20,7 +20,7 @@ trait DepsForward
     /**
      * @return list<string>
      */
-    protected static function depsForwardOptionNames(): array
+    protected static function depsInstallUpdateOptionNames(): array
     {
         return [
             'composer-only',
@@ -37,7 +37,7 @@ trait DepsForward
     /**
      * @return list<string>
      */
-    protected static function depsStatusForwardOptionNames(): array
+    protected static function depsStatusOptionNames(): array
     {
         return [
             'composer-only',
@@ -102,7 +102,7 @@ Manage Composer (PHP) and npm (theme frontend) dependencies for the whole projec
 
 Actions:
   status    List discovered manifests and whether vendor/node_modules exist
-  install   Run composer install / npm install (or npm ci when lockfile exists)
+  install   Run composer install / npm ci; safely fall back when a lockfile is stale
   update    Run composer update / npm update
 
 Scopes:
@@ -122,9 +122,14 @@ Examples:
   pinx deps update com_my_shop --composer-only
 
 Dedicated commands:
-  pinx deps:status
-  pinx deps:install
-  pinx deps:update
+  pinx deps:status   (alias: deps:st)
+  pinx deps:install  (alias: deps:i)
+  pinx deps:update   (alias: deps:up)
+
+npm lockfiles:
+  When npm ci finds package.json and package-lock.json out of sync, pincore
+  explains the mismatch, falls back to npm install, and shows the lockfile
+  that should be committed.
 
 Leave action and scope empty to pick interactively.
 HELP;

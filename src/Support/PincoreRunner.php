@@ -20,13 +20,21 @@ final class PincoreRunner
      */
     public function run(array $args, OutputInterface $output, array $extraEnv = []): int
     {
-        $args = self::ensureAnsiArgs($args);
         $corePath = CorePath::resolve($this->projectRoot);
+
+        if (self::isDepsCommand($args) && !is_file($corePath . '/Terminal/Deps/DepsCommand.php')) {
+            $this->renderDepsUnavailable($corePath);
+
+            return 1;
+        }
+
+        $args = self::ensureAnsiArgs($args);
         $binary = $this->binary($corePath);
         $command = array_merge(['php'], CliErrorReporting::phpIniArgs($this->projectRoot), [$binary], $args);
         $env = array_merge($_ENV, [
             'PINOOX_BASE_PATH' => $this->projectRoot,
             'PINOOX_CORE_PATH' => $corePath,
+            'PINOOX_CLI_INVOKE' => 'pinx',
         ], DevApp::pincoreEnv($this->projectRoot), $extraEnv);
 
         if (CliTerminalStyle::supportsColor() || CliErrorReporting::shouldDisplayErrors($this->projectRoot)) {
@@ -141,6 +149,34 @@ final class PincoreRunner
         }
 
         $lines[] = '';
+        fwrite(STDERR, implode(PHP_EOL, $lines));
+    }
+
+    /**
+     * @param list<string> $args
+     */
+    private static function isDepsCommand(array $args): bool
+    {
+        return in_array('deps', $args, true) || in_array('dep', $args, true);
+    }
+
+    private function renderDepsUnavailable(string $corePath): void
+    {
+        $style = new CliTerminalStyle();
+        $lines = [
+            '',
+            $style->banner('Dependency commands unavailable', '1;97', '43'),
+            $style->rule(),
+            $style->wrap('This project uses an older pincore that does not provide the dependency manager required by pinx deps.'),
+            '',
+            $style->field('Pincore', $corePath),
+            '',
+            $style->section('Update pincore'),
+            '',
+            '  ' . $style->color('>', '1;96') . ' ' . $style->accent('composer update pinoox/pincore'),
+            '',
+        ];
+
         fwrite(STDERR, implode(PHP_EOL, $lines));
     }
 }

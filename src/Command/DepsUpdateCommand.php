@@ -37,8 +37,8 @@ final class DepsUpdateCommand extends DepsPincoreActionCommand
     /**
      * @return list<string>
      */
-    protected function depsForwardOptionNames(): array
+    protected function forwardedDepsOptionNames(): array
     {
-        return self::depsForwardOptionNames();
+        return self::depsInstallUpdateOptionNames();
     }
 }

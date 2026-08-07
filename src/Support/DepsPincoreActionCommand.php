@@ -38,7 +38,7 @@ abstract class DepsPincoreActionCommand extends PincoreActionCommand
      */
     protected function pincoreArgv(AppContext $context, InputInterface $input): array
     {
-        return $this->buildDepsArgv($this->depsAction(), $input, $this->depsForwardOptionNames());
+        return $this->buildDepsArgv($this->depsAction(), $input, $this->forwardedDepsOptionNames());
     }
 
     abstract protected function depsAction(): string;
@@ -46,5 +46,5 @@ abstract class DepsPincoreActionCommand extends PincoreActionCommand
     /**
      * @return list<string>
      */
-    abstract protected function depsForwardOptionNames(): array;
+    abstract protected function forwardedDepsOptionNames(): array;
 }

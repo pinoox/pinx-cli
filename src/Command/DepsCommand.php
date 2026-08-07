@@ -8,6 +8,7 @@ use Pinoox\PinxCli\Support\DepsForward;
 use Pinoox\PinxCli\Support\RunsForApp;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -64,8 +65,8 @@ final class DepsCommand extends Command
         }
 
         $forwardOptions = $action === 'status'
-            ? self::depsStatusForwardOptionNames()
-            : self::depsForwardOptionNames();
+            ? self::depsStatusOptionNames()
+            : self::depsInstallUpdateOptionNames();
 
         $args = $this->buildDepsArgv($action, $input, $forwardOptions);
 
@@ -79,14 +80,15 @@ final class DepsCommand extends Command
         }
 
         $choices = [
-            'status' => 'Show dependency inventory',
-            'install' => 'Install Composer and npm dependencies',
-            'update' => 'Update Composer and npm dependencies',
+            'status' => ['Inspect manifests and installed dependencies', 'pinx deps:status'],
+            'install' => ['Install reproducibly and repair stale npm locks', 'pinx deps:install'],
+            'update' => ['Update Composer and npm dependency versions', 'pinx deps:update'],
         ];
 
-        $io->section('Dependency action');
-        $io->table(['Action', 'Description'], array_map(
-            static fn (string $action, string $description): array => [$action, $description],
+        $io->title('Pinx Dependencies');
+        $io->text('Manage PHP and frontend dependencies across the project from one workflow.');
+        $io->table(['Action', 'What it does', 'Command'], array_map(
+            static fn (string $action, array $details): array => [$action, $details[0], $details[1]],
             array_keys($choices),
             array_values($choices),
         ));
@@ -96,13 +98,16 @@ final class DepsCommand extends Command
         $question->setValidator(static function ($answer) use ($choices): string {
             $answer = strtolower(trim((string) $answer));
 
-            if (!isset($choices[$answer])) {
+            if (!array_key_exists($answer, $choices)) {
                 throw new \RuntimeException('Choose status, install, or update.');
             }
 
             return $answer;
         });
 
-        return $this->getHelper('question')->ask($input, $output, $question);
+        $helper = $this->getHelper('question');
+        assert($helper instanceof QuestionHelper);
+
+        return $helper->ask($input, $output, $question);
     }
 }
