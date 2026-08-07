@@ -53,6 +53,12 @@ $changed = $repairer->sync($root);
 
 assert_sync_true(in_array('composer.json', $changed, true), 'sync should report a created composer.json');
 assert_sync_true(is_file($root . '/composer.json'), 'sync should create a missing composer.json');
+assert_sync_true(in_array('.gitignore', $changed, true), 'sync should report a created .gitignore');
+assert_sync_true(is_file($root . '/.gitignore'), 'sync should create a missing .gitignore from pinoox/app');
+assert_sync_true(
+    str_contains((string) file_get_contents($root . '/.gitignore'), '/vendor/'),
+    'generated .gitignore should include the pinoox/app ignore rules',
+);
 
 $composer = json_decode((string) file_get_contents($root . '/composer.json'), true);
 assert_sync_true(is_array($composer), 'generated composer.json should contain valid JSON');

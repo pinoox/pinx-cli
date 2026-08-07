@@ -32,7 +32,8 @@ Adds missing Pinx infrastructure and Composer dependencies for single-app develo
 
 Creates composer.json when missing, using app.php for its name, version, and description.
 Adds missing single-app dependencies from pinoox/app.
-Existing dependency constraints and custom Composer settings are preserved.
+Copies missing support files from pinoox/app (including .gitignore, .env.example, index.php, and platform launcher files).
+Existing dependency constraints, custom Composer settings, and existing support files are preserved.
 It never changes app.php, routes, or other app-specific files.
 Use --force only to overwrite the Pinx-managed support file list.
 
