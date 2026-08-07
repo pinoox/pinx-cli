@@ -28,10 +28,12 @@ final class SyncCommand extends Command
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing Pinx support files')
             ->setHelp(
                 <<<'HELP'
-Adds missing Pinx infrastructure files only.
+Adds missing Pinx infrastructure and Composer dependencies for single-app development.
 
-Creates composer.json from the single-app template only when it is missing.
-It never overwrites composer.json, app.php, routes, or other app-specific files.
+Creates composer.json when missing, using app.php for its name, version, and description.
+Adds missing single-app dependencies from pinoox/app.
+Existing dependency constraints and custom Composer settings are preserved.
+It never changes app.php, routes, or other app-specific files.
 Use --force only to overwrite the Pinx-managed support file list.
 
 Examples:
@@ -64,11 +66,19 @@ HELP
         if ($changed === []) {
             $io->success('Pinx support files are already in sync.');
 
+            if (!is_file($root . '/vendor/autoload.php')) {
+                $io->text('Next: composer install');
+            }
+
             return Command::SUCCESS;
         }
 
         $io->success('Pinx support files synced.');
         $io->listing($changed);
+
+        if (in_array('composer.json', $changed, true) || !is_file($root . '/vendor/autoload.php')) {
+            $io->text('Next: composer install');
+        }
 
         return Command::SUCCESS;
     }

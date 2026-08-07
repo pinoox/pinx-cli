@@ -133,12 +133,13 @@ final class ProjectScaffolder
     }
 
     /**
-     * Sync Pinx infrastructure and create composer.json when it is missing.
+     * Sync Pinx infrastructure and required single-app Composer dependencies.
      *
-     * Existing composer.json files are never overwritten, including with --force.
-     * App-owned files such as app.php and routes are never changed.
+     * Existing dependency constraints and custom Composer settings are preserved.
+     * App-owned files such as app.php and routes are never changed, including with --force.
      *
      * @param array<string, string> $replacements
+     * @param array{name: string, version?: string, description?: string, type: string} $composerMetadata
      * @return list<string>
      */
     public function syncSupportFiles(
@@ -146,25 +147,40 @@ final class ProjectScaffolder
         array $replacements,
         bool $overwrite = false,
         ?OutputInterface $output = null,
+        array $composerMetadata = [],
     ): array {
         $source = TemplatePath::resolve($output);
         $projectRoot = ProjectRoot::normalize($projectRoot);
         $changed = [];
 
+        if (!is_file($projectRoot . '/composer.json')) {
+            if ($this->copySupportFile(
+                $source,
+                $projectRoot,
+                'composer.json',
+                $replacements,
+                overwrite: false,
+            )) {
+                $changed[] = 'composer.json';
+
+                if ($composerMetadata !== []) {
+                    (new ComposerManifestSyncer())->initializeMetadata(
+                        $projectRoot . '/composer.json',
+                        $composerMetadata,
+                    );
+                }
+            }
+        } elseif ((new ComposerManifestSyncer())->sync(
+            $source . '/composer.json',
+            $projectRoot . '/composer.json',
+        )) {
+            $changed[] = 'composer.json';
+        }
+
         foreach (self::supportSyncFiles() as $relative) {
             if ($this->copySupportFile($source, $projectRoot, $relative, $replacements, $overwrite)) {
                 $changed[] = $relative;
             }
-        }
-
-        if ($this->copySupportFile(
-            $source,
-            $projectRoot,
-            'composer.json',
-            $replacements,
-            overwrite: false,
-        )) {
-            $changed[] = 'composer.json';
         }
 
         return $changed;

@@ -29,7 +29,7 @@ Add Composer’s global `bin` to your `PATH` if `pinx` is not found:
 | `composer global require` | Installs the `pinx` command on your machine |
 | `pinx new my-shop` | Scaffolds from `pinoox/app`; wizard suggests a 3-part package (e.g. `com_my_shop`) |
 | `.env` | Minimal by default: `APP_ENV=development` and `DB_CONNECTION=devdb`; use `.env.example` as the full reference |
-| `pinx sync` | Adds missing single-app support files and creates composer.json when absent |
+| `pinx sync` | Adds support files and missing Composer dependencies required by single-app |
 | `pinx repair` | Repairs a folder so it can run as a Pinx single-app project |
 | `pinx migrate` | Runs app migrations; DevDB is used automatically for local development unless you configure another database |
 | `pinx dev` | PHP dev server; starts Vite too when a frontend stack is configured |
@@ -48,7 +48,7 @@ pinx migrate
 pinx dev
 ```
 
-Use `pinx sync` to prepare an existing app folder for single-app development. It creates a missing `composer.json` and adds template support files without changing app code, routes, or an existing Composer manifest. Use `pinx sync --force` or `pinx repair --force` only when you intentionally want template-managed support files overwritten.
+Use `pinx sync` to prepare an existing app folder for single-app development. A new `composer.json` gets its package name, version, and description from `app.php`; existing manifests keep their metadata. Sync also merges missing `require` and `require-dev` entries from `pinoox/app`, while preserving existing constraints, custom dependencies, app code, and routes. After synchronization, run `composer install`. Use `pinx sync --force` or `pinx repair --force` only when you intentionally want template-managed support files overwritten.
 
 Pinx Inspector is available automatically while `pinx dev` is running:
 
