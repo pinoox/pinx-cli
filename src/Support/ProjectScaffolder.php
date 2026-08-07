@@ -133,7 +133,10 @@ final class ProjectScaffolder
     }
 
     /**
-     * Sync only Pinx infrastructure files — never app.php, routes, or composer.json.
+     * Sync Pinx infrastructure and create composer.json when it is missing.
+     *
+     * Existing composer.json files are never overwritten, including with --force.
+     * App-owned files such as app.php and routes are never changed.
      *
      * @param array<string, string> $replacements
      * @return list<string>
@@ -152,6 +155,16 @@ final class ProjectScaffolder
             if ($this->copySupportFile($source, $projectRoot, $relative, $replacements, $overwrite)) {
                 $changed[] = $relative;
             }
+        }
+
+        if ($this->copySupportFile(
+            $source,
+            $projectRoot,
+            'composer.json',
+            $replacements,
+            overwrite: false,
+        )) {
+            $changed[] = 'composer.json';
         }
 
         return $changed;

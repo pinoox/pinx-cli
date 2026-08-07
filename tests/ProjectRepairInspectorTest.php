@@ -51,7 +51,7 @@ PHP);
 $supportFiles = ProjectScaffolder::supportSyncFiles();
 assert_true(!in_array('app.php', $supportFiles, true), 'sync must not include app.php');
 assert_true(!in_array('routes/web.php', $supportFiles, true), 'sync must not include routes/web.php');
-assert_true(!in_array('composer.json', $supportFiles, true), 'sync must not include composer.json');
+assert_true(!in_array('composer.json', $supportFiles, true), 'forceable support files must not include composer.json');
 
 $inspector = new ProjectRepairInspector();
 $findings = $inspector->diagnose($root, 'com_test_repair');

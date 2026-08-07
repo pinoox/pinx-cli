@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'sync',
-    description: 'Sync missing Pinx support files (platform launcher, bin/pinx, index.php)',
+    description: 'Prepare an existing app for safe single-app development',
 )]
 final class SyncCommand extends Command
 {
@@ -30,8 +30,9 @@ final class SyncCommand extends Command
                 <<<'HELP'
 Adds missing Pinx infrastructure files only.
 
-This command does not overwrite app.php, routes, composer.json, or other app-specific files
-unless you pass --force for the support file list itself.
+Creates composer.json from the single-app template only when it is missing.
+It never overwrites composer.json, app.php, routes, or other app-specific files.
+Use --force only to overwrite the Pinx-managed support file list.
 
 Examples:
   pinx sync
