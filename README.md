@@ -129,7 +129,7 @@ pinx dev --no-frontend      # PHP only
 
 pinx migrate                # run app migrations (--platform runs platform first)
 pinx migrate:st             # migration status
-pinx migrate:cr create_products_table
+pinx migrate:cr add_email_to_users
 
 pinx db:list                # platform + app connections (--test, --json)
 pinx db:show platform       # connection details
@@ -143,7 +143,7 @@ pinx file:list
 
 pinx make controller ProductController
 pinx make model ProductModel
-pinx make migration create_products_table
+pinx make migration add_email_to_users
 pinx make portal ShopService
 
 pinx routes                 # list named actions (--validate, --json)
@@ -288,7 +288,7 @@ pinx list --raw
 | `migrate:reset` | `migrate:rs` | Rollback all batches via `down()` |
 | `migrate:drop` | `migrate:dp` | Drop app tables and clear migration history |
 | `migrate:fresh` | `migrate:fr` | Drop tables then re-run all migrations |
-| `migrate:create <name>` | `migrate:cr` | Create migration file |
+| `migrate:create <name>` | `migrate:cr` | Create migration file (`--create`, `--table`) |
 | `migrate:platform` | `migrate:pl` | Platform migrations only |
 | `seeder:run` | `seed` | Run seeders (`-c` class) |
 | `db:list` | `databases` | List platform and app connections (`--test`, `--json`) |

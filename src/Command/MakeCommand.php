@@ -44,6 +44,8 @@ final class MakeCommand extends Command
             ->addOption('unit', 'u', InputOption::VALUE_NONE, 'Create unit test (test only)')
             ->addOption('feature', null, InputOption::VALUE_NONE, 'Create feature test (test only)')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing test file (test only)')
+            ->addOption('create', null, InputOption::VALUE_REQUIRED, 'The table to be created (migration only)')
+            ->addOption('table', null, InputOption::VALUE_REQUIRED, 'The table to migrate (migration only)')
             ->setHelp(
                 <<<'HELP'
 Create files inside the current single-app project (no package argument needed).
@@ -52,6 +54,8 @@ Examples:
   pinx make controller ProductController
   pinx make model ProductModel
   pinx make migration create_products_table
+  pinx make migration add_email_to_users
+  pinx make migration sync_legacy_flags --table=users
   pinx make patch fix_user_roles
   pinx make portal ShopService
   pinx make form-request StoreProductRequest
@@ -95,7 +99,7 @@ HELP
         return match ($type) {
             'controller' => ['controller:create', $name, $context->package],
             'model' => ['model:create', $name, $context->package],
-            'migration' => ['migrate:create', $name, $context->package],
+            'migration' => $this->migrationArgs($context, $name, $input),
             'patch' => ['patch:create', $name, $context->package],
             'portal' => $this->portalArgs($context, $name, $input),
             'form-request' => ['form-request:create', $name, $context->package],
@@ -103,6 +107,17 @@ HELP
             'factory' => ['factory:create', $name, $context->package],
             'test' => $this->testArgs($context, $name, $input),
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function migrationArgs(AppContext $context, string $name, InputInterface $input): array
+    {
+        return array_merge(
+            ['migrate:create', $name, $context->package],
+            $this->forwardOptions($input, ['create', 'table']),
+        );
     }
 
     /**
