@@ -86,7 +86,7 @@ Classic Pinoox installs keep many apps under `apps/` and pick one at runtime. **
 
 - `app.php` at the project root holds package identity and pinx settings
 - `Controller/`, `Model/`, `routes/`, `theme/` live at the root — not inside `apps/{package}/`
-- `platform/` holds local routing and launcher config (excluded from `.pinx` builds)
+- `platform/` and `storage/` are local host/runtime (excluded from `.pinx` builds unless `build.include`)
 - Pinx always targets **your** app — no package picker, no manager UI
 
 ```
@@ -189,11 +189,12 @@ pinx release --bump=patch   # bump version in app.php + build
 pinx release --sign         # sign when key is configured in app.php → pinx.sign
 ```
 
-`pinx build` applies sensible defaults (excludes `vendor/`, `bin/`, `.env`, `platform/`, dev tooling). Override in `app.php` only when needed:
+`pinx build` applies sensible defaults (excludes `platform/`, `storage/`, `vendor/`, `bin/`, `.env`, dev tooling). Composer `require-dev` and `pinoox/pincore` are never bundled — the host platform already has pincore. Override in `app.php` only when needed:
 
 ```php
 'build' => [
     'exclude' => ['my-private-notes/'],
+    'include' => ['platform'], // opt in — platform/ and storage/ are excluded by default
     'composer' => false,
 ],
 'pinx' => [
