@@ -168,6 +168,8 @@ final class CommandCatalog
 
             'build' => 'build',
             'release' => 'build',
+            'deploy' => 'build',
+            'pinroll:deploy' => 'build',
 
             'make' => 'scaffold',
             'make:scaffold' => 'scaffold',
