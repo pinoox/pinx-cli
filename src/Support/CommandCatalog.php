@@ -170,6 +170,8 @@ final class CommandCatalog
             'release' => 'build',
             'deploy' => 'build',
             'pinroll:deploy' => 'build',
+            'provision' => 'build',
+            'pinroll:provision' => 'build',
 
             'make' => 'scaffold',
             'make:scaffold' => 'scaffold',

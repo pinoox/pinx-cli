@@ -28,6 +28,7 @@ final class DeployCommand extends Command
             ->addArgument('host', InputArgument::OPTIONAL, 'Pinroll host name')
             ->addOption('via', null, InputOption::VALUE_REQUIRED, 'Transport: ftp, ssh, pinion')
             ->addOption('all', null, InputOption::VALUE_NONE, 'Push app + vendor + theme')
+            ->addOption('full', null, InputOption::VALUE_NONE, 'Update platform + every installed app')
             ->addOption('vendor', null, InputOption::VALUE_NONE, 'Include vendor pack')
             ->addOption('theme', null, InputOption::VALUE_NONE, 'Rebuild theme assets (fe:build) then include in the app .pinx')
             ->addOption('platform', null, InputOption::VALUE_NONE, 'Also ship platform .zip (pinx:update)')
@@ -56,7 +57,7 @@ final class DeployCommand extends Command
             $input,
             $output,
             'pinroll:deploy',
-            ['via', 'all', 'vendor', 'theme', 'platform', 'app', 'check'],
+            ['via', 'all', 'full', 'vendor', 'theme', 'platform', 'app', 'check'],
             ['host'],
             false,
         );

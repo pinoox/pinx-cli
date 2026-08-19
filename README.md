@@ -503,6 +503,20 @@ php packages/apply-pincore-overlay.php
 
 ---
 
+## Deploy (Pinroll)
+
+Requires `pinoox/pinroll` in the project (`composer require --dev pinoox/pinroll`).
+
+```bash
+pinx provision              # blank host: PinGate + platform.zip + installer
+pinx deploy                 # build, upload, install this app
+pinx deploy --full          # platform + every installed app
+```
+
+Config: `.pinoox/pinroll.config.php` and `PINROLL_*` in `.env`. See the [Pinroll guide](https://github.com/pinoox/docs/blob/master/en/deploy/pinroll.md).
+
+---
+
 ## Related packages
 
 | Package | Role |

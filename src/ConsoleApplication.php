@@ -17,6 +17,7 @@ use Pinoox\PinxCli\Command\DepsInstallCommand;
 use Pinoox\PinxCli\Command\DepsStatusCommand;
 use Pinoox\PinxCli\Command\DepsUpdateCommand;
 use Pinoox\PinxCli\Command\DeployCommand;
+use Pinoox\PinxCli\Command\ProvisionCommand;
 use Pinoox\PinxCli\Command\DevDbClearCommand;
 use Pinoox\PinxCli\Command\DevDbExportCommand;
 use Pinoox\PinxCli\Command\DevDbInspectCommand;
@@ -165,6 +166,7 @@ final class ConsoleApplication extends Application
             new BuildCommand(),
             new ReleaseCommand(),
             new DeployCommand(),
+            new ProvisionCommand(),
 
             // Scaffolding
             new MakeCommand(),
