@@ -375,6 +375,12 @@ Forwarded to `php pinoox pinion:*` — temp chunked upload sessions under `stora
 |---------|---------|-------------|
 | `build` | `bld` | Build `.pinx` package |
 | `release` | `rel` | Version bump + build (`--bump`, `--sign`) |
+| `pinroll:init` | — | Scaffold Pinroll overlay |
+| `connect` | `pinroll:connect` | Connect host / PinGate |
+| `kit` | `pinroll:kit` | PinGate zip for File Manager |
+| `pinroll:check` | `deploy:check` | Verify host + PinGate |
+| `deploy` | `pinroll:deploy` | Build this app’s `.pinx`, upload, install/update |
+| `provision` | `pinroll:provision` | Blank-host platform install |
 
 ### Scaffolding
 
@@ -507,13 +513,18 @@ php packages/apply-pincore-overlay.php
 
 Requires `pinoox/pinroll` in the project (`composer require --dev pinoox/pinroll`).
 
+Default **`pinx deploy` ships only this app’s `.pinx`** (install or update `apps/{package}/` on the host). It does not upload the whole project.
+
 ```bash
-pinx provision              # blank host: PinGate + platform.zip + installer
-pinx deploy                 # build, upload, install this app
-pinx deploy --full          # platform + every installed app
+pinx pinroll:init
+pinx connect --via=ftp      # or: pinx kit
+pinx pinroll:check
+pinx deploy                 # this package only
+pinx provision              # blank host once: PinGate + platform.zip + installer
+pinx deploy --full          # opt-in: platform zip + every app
 ```
 
-Config: `.pinoox/pinroll.config.php` and `PINROLL_*` in `.env`. See the [Pinroll guide](https://github.com/pinoox/docs/blob/master/en/deploy/pinroll.md).
+See [Deploy a Pinx app](https://github.com/pinoox/docs/blob/master/en/deploy/pinx.md) and the [Pinroll guide](https://github.com/pinoox/docs/blob/master/en/deploy/pinroll.md).
 
 ---
 

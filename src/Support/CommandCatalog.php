@@ -172,6 +172,13 @@ final class CommandCatalog
             'pinroll:deploy' => 'build',
             'provision' => 'build',
             'pinroll:provision' => 'build',
+            'pinroll:init' => 'build',
+            'connect' => 'build',
+            'pinroll:connect' => 'build',
+            'kit' => 'build',
+            'pinroll:kit' => 'build',
+            'pinroll:check' => 'build',
+            'deploy:check' => 'build',
 
             'make' => 'scaffold',
             'make:scaffold' => 'scaffold',

@@ -17,6 +17,10 @@ use Pinoox\PinxCli\Command\DepsInstallCommand;
 use Pinoox\PinxCli\Command\DepsStatusCommand;
 use Pinoox\PinxCli\Command\DepsUpdateCommand;
 use Pinoox\PinxCli\Command\DeployCommand;
+use Pinoox\PinxCli\Command\PinrollCheckCommand;
+use Pinoox\PinxCli\Command\PinrollConnectCommand;
+use Pinoox\PinxCli\Command\PinrollInitCommand;
+use Pinoox\PinxCli\Command\PinrollKitCommand;
 use Pinoox\PinxCli\Command\ProvisionCommand;
 use Pinoox\PinxCli\Command\DevDbClearCommand;
 use Pinoox\PinxCli\Command\DevDbExportCommand;
@@ -165,6 +169,10 @@ final class ConsoleApplication extends Application
             // Build & release
             new BuildCommand(),
             new ReleaseCommand(),
+            new PinrollInitCommand(),
+            new PinrollConnectCommand(),
+            new PinrollKitCommand(),
+            new PinrollCheckCommand(),
             new DeployCommand(),
             new ProvisionCommand(),
 

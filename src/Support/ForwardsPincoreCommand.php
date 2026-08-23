@@ -16,6 +16,7 @@ trait ForwardsPincoreCommand
     /**
      * @param list<string> $optionNames
      * @param list<string> $argumentNames
+     * @param list<string> $extraArgs
      */
     protected function forwardPincoreCommand(
         SymfonyStyle $io,
@@ -25,6 +26,7 @@ trait ForwardsPincoreCommand
         array $optionNames = [],
         array $argumentNames = [],
         bool $appendPackage = true,
+        array $extraArgs = [],
     ): int {
         $context = $this->requireApp($io);
 
@@ -57,7 +59,7 @@ trait ForwardsPincoreCommand
             $args[] = $context->package;
         }
 
-        $args = array_merge($args, $this->forwardOptions($input, $optionNames));
+        $args = array_merge($args, $this->forwardOptions($input, $optionNames), $extraArgs);
 
         return $this->runPincore($context, $args, $output);
     }

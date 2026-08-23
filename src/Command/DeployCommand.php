@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'deploy',
-    description: 'Build, upload, and install this app via Pinroll (php pinoox pinroll:deploy)',
+    description: 'Build this app\'s .pinx, upload it, and install/update the package on the host',
     aliases: ['pinroll:deploy'],
 )]
 final class DeployCommand extends Command
@@ -28,13 +28,23 @@ final class DeployCommand extends Command
             ->addArgument('host', InputArgument::OPTIONAL, 'Pinroll host name')
             ->addOption('via', null, InputOption::VALUE_REQUIRED, 'Transport: ftp, ssh, pinion')
             ->addOption('all', null, InputOption::VALUE_NONE, 'Push app + vendor + theme')
-            ->addOption('full', null, InputOption::VALUE_NONE, 'Update platform + every installed app')
+            ->addOption('full', null, InputOption::VALUE_NONE, 'Also ship platform zip + every installed app')
             ->addOption('vendor', null, InputOption::VALUE_NONE, 'Include vendor pack')
             ->addOption('theme', null, InputOption::VALUE_NONE, 'Rebuild theme assets (fe:build) then include in the app .pinx')
             ->addOption('platform', null, InputOption::VALUE_NONE, 'Also ship platform .zip (pinx:update)')
-            ->addOption('app', null, InputOption::VALUE_REQUIRED, 'App package (multi-app platform)')
+            ->addOption('app', null, InputOption::VALUE_REQUIRED, 'Override package (default: this project\'s app.php package)')
             ->addOption('check', 'c', InputOption::VALUE_NONE, 'Run pinroll:check first')
-            ->setHelp('Requires pinoox/pinroll. Example: pinx deploy');
+            ->setHelp(<<<'HELP'
+Requires pinoox/pinroll.
+
+Default (single-app): build only this project's .pinx package, upload it,
+and install or update that package on the host. Does not send the whole
+project, vendor/, or platform.zip.
+
+  pinx deploy
+  pinx deploy --check
+  pinx deploy --full          # platform + every app (rare for Pinx)
+HELP);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -52,6 +62,16 @@ final class DeployCommand extends Command
             return Command::FAILURE;
         }
 
+        $extra = [];
+        if (!$input->getOption('full')) {
+            $app = (string) ($input->getOption('app') ?: '');
+            if ($app === '') {
+                $extra[] = '--app=' . $context->package;
+            }
+        }
+
+        $io->writeln('<fg=gray>Pinx package:</> <info>' . $context->package . '</info> <fg=gray>(.pinx only)</>');
+
         return $this->forwardPincoreCommand(
             $io,
             $input,
@@ -60,6 +80,7 @@ final class DeployCommand extends Command
             ['via', 'all', 'full', 'vendor', 'theme', 'platform', 'app', 'check'],
             ['host'],
             false,
+            $extra,
         );
     }
 }
