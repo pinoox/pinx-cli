@@ -379,6 +379,7 @@ Forwarded to `php pinoox pinion:*` — temp chunked upload sessions under `stora
 | `connect` | `pinroll:connect` | Connect host / PinGate |
 | `kit` | `pinroll:kit` | PinGate zip for File Manager |
 | `pinroll:check` | `deploy:check` | Verify host + PinGate |
+| `pinroll:sync` | `pinroll:push:path` | Zip a local folder and sync to host |
 | `deploy` | `pinroll:deploy` | Build this app’s `.pinx`, upload, install/update |
 | `provision` | `pinroll:provision` | Blank-host platform install |
 
