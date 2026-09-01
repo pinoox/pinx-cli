@@ -222,6 +222,7 @@ Override the detected package with environment variables:
 | `PINX_PACKAGE` | Force CLI target package |
 | `PINOOX_DEV_APP` | Alias for `PINX_PACKAGE` |
 | `PINX_DEV=1` | Dev mode (set automatically by pinx when delegating to pincore) |
+| `PINOOX_JS_PACKAGE_MANAGER` | Frontend package manager override (`npm`, `bun`, `pnpm`, `yarn`) |
 
 The package can also be resolved from `platform/apps.config.php` when the app is registered with path `~`.
 
