@@ -36,6 +36,7 @@ final class ServeCommand extends PincoreActionCommand
                 'share-password',
                 'share-expire',
                 'share-provider',
+                'workers',
             ],
             help: <<<'HELP'
 Starts the PHP built-in server locked to the current app (same as php pinoox serve --app=…).
@@ -43,6 +44,7 @@ Starts the PHP built-in server locked to the current app (same as php pinoox ser
 Examples:
   pinx serve
   pinx serve --port=8080
+  pinx serve --workers=4
   pinx serve --network
   pinx serve --open
   pinx serve --share
@@ -68,6 +70,7 @@ HELP,
             ['share-provider', null, InputOption::VALUE_OPTIONAL, 'Tunnel provider: auto, pinggy, serveo, cloudflare, localhostrun, bore, tunnelmole, ngrok, localtunnel'],
             ['share-password', null, InputOption::VALUE_OPTIONAL, 'Protect the share URL with a password'],
             ['share-expire', null, InputOption::VALUE_OPTIONAL, 'Auto-stop the tunnel after a duration (e.g. 2h, 30m, 60s)'],
+            ['workers', null, InputOption::VALUE_OPTIONAL, 'Worker processes for PHP CLI server (Linux/macOS/WSL; defaults to 4 on non-Windows)'],
         ]);
     }
 
