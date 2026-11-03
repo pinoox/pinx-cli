@@ -19,6 +19,8 @@ final class PlatformCommandArguments
         'deps:i' => ['deps', 'install'],
         'deps:update' => ['deps', 'update'],
         'deps:up' => ['deps', 'update'],
+        'logs' => ['pinroll:logs'],
+        'pinroll:log' => ['pinroll:logs'],
     ];
 
     /**

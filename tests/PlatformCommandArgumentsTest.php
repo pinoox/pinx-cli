@@ -32,6 +32,9 @@ $cases = [
     [['deps', 'install', 'all'], ['deps', 'install', 'all']],
     [['fe:install', 'com_shop'], ['fe:install', 'com_shop']],
     [['custom', 'deps:i'], ['custom', 'deps:i']],
+    [['logs'], ['pinroll:logs']],
+    [['logs', 'production', '--json'], ['pinroll:logs', 'production', '--json']],
+    [['pinroll:log', '--local'], ['pinroll:logs', '--local']],
 ];
 
 foreach ($cases as [$input, $expected]) {
