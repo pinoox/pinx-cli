@@ -21,6 +21,7 @@ use Pinoox\PinxCli\Command\PinrollCheckCommand;
 use Pinoox\PinxCli\Command\PinrollConnectCommand;
 use Pinoox\PinxCli\Command\PinrollInitCommand;
 use Pinoox\PinxCli\Command\PinrollKitCommand;
+use Pinoox\PinxCli\Command\PinrollLogsCommand;
 use Pinoox\PinxCli\Command\PinrollSyncCommand;
 use Pinoox\PinxCli\Command\ProvisionCommand;
 use Pinoox\PinxCli\Command\DevDbClearCommand;
@@ -174,6 +175,7 @@ final class ConsoleApplication extends Application
             new PinrollConnectCommand(),
             new PinrollKitCommand(),
             new PinrollCheckCommand(),
+            new PinrollLogsCommand(),
             new PinrollSyncCommand(),
             new DeployCommand(),
             new ProvisionCommand(),

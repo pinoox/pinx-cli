@@ -48,6 +48,7 @@ $forcePinx = in_array('--pinx', $args, true);
 
 if ($forcePinx) {
     $args = array_values(array_filter($args, static fn (string $arg): bool => $arg !== '--pinx'));
+    $_SERVER['argv'] = array_values(array_filter($_SERVER['argv'] ?? [], static fn (string $arg): bool => $arg !== '--pinx'));
 }
 
 if (!$forcePinx && !PlatformContext::isPinxLocalCommand($args)) {

@@ -522,6 +522,7 @@ pinx pinroll:init
 pinx connect --via=ftp      # or: pinx kit
 pinx pinroll:check
 pinx deploy                 # this package only
+pinx logs                   # view host logs (--json for agents, --latest, --file=)
 pinx provision              # blank host once: PinGate + platform.zip + installer
 pinx deploy --full          # opt-in: platform zip + every app
 ```

@@ -179,6 +179,9 @@ final class CommandCatalog
             'pinroll:kit' => 'build',
             'pinroll:check' => 'build',
             'deploy:check' => 'build',
+            'pinroll:logs' => 'build',
+            'logs' => 'build',
+            'pinroll:log' => 'build',
             'pinroll:sync' => 'build',
             'pinroll:push:path' => 'build',
             'pinroll:path:sync' => 'build',
@@ -342,6 +345,7 @@ final class CommandCatalog
             // Build & release
             'build' => ['bld'],
             'release' => ['rel'],
+            'pinroll:logs' => ['logs', 'pinroll:log', 'log'],
 
             // Scaffolding
             'make' => ['mk'],
